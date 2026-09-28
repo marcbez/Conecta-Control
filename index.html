@@ -211,6 +211,22 @@
     .footer { text-align: center; color: var(--muted); font-size: .86rem; padding: 12px 0 0; }
     @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } aside { position: static; max-height: none; overflow-y: visible; } section { padding: 22px; } .hero { padding: 44px 6vw; } }
     @media print { aside { display: none; } .layout { display: block; padding: 0; } section { break-inside: avoid; box-shadow: none; } .hero { color: #000; background: white; border-bottom: 2px solid var(--navy); } body.printing-progress > * { visibility: hidden !important; } body.printing-progress #progress-report, body.printing-progress #progress-report * { visibility: visible !important; } body.printing-progress #progress-report { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 24px; color: #111; } body.printing-progress #progress-report table { font-size: 10pt; } body.printing-progress #progress-report h1 { color: #102a43; font-size: 24pt; } }
+
+    .github-monitor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:18px}
+    .github-config{display:grid;grid-template-columns:1.4fr .7fr 1fr auto;gap:10px;align-items:end;margin:16px 0}
+    .github-config label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:700;color:#486581}
+    .github-config input{border:1px solid #bcccdc;border-radius:9px;padding:10px 11px;font:inherit;color:#102a43;background:#fff}
+    .github-config button,.github-refresh{border:0;border-radius:9px;padding:10px 14px;background:#1677c8;color:white;font-weight:700;cursor:pointer}
+    .github-refresh{background:#0f766e}
+    .github-kpi{border:1px solid #d9e2ec;border-radius:12px;padding:15px;background:linear-gradient(135deg,#fff,#f4f9ff)}
+    .github-kpi span{display:block;color:#627d98;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .github-kpi strong{display:block;font-size:1.55rem;color:#102a43;margin-top:5px}
+    .github-kpi small{display:block;color:#627d98;margin-top:4px}
+    .github-status{margin:10px 0 0;color:#486581;font-size:.85rem;min-height:1.2em}
+    .github-table-wrap{overflow:auto;margin-top:16px}.github-table{width:100%;border-collapse:collapse;font-size:.84rem}.github-table th,.github-table td{border-bottom:1px solid #e6edf3;padding:9px;text-align:left;vertical-align:top}.github-table th{color:#486581;background:#f7fafc}.evidence-ok{color:#087f5b;font-weight:700}.evidence-pending{color:#b45309;font-weight:700}
+    .manual-note{border-left:4px solid #1677c8;background:#eef7ff;padding:12px 14px;border-radius:8px;margin-top:14px;color:#334e68;font-size:.88rem}
+    @media (max-width:900px){.github-monitor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.github-config{grid-template-columns:1fr 1fr}.github-config button{width:100%}}
+    @media (max-width:560px){.github-monitor-grid{grid-template-columns:1fr}.github-config{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -781,6 +797,26 @@ flowchart TD
       <h2>Distribuição contratual detalhada</h2>
       <div class="dashboard-table-wrap"><table><thead><tr><th>Milestone</th><th>Peso contratual</th><th>Concluído no milestone</th><th>Contribuição acumulada</th><th>Status</th></tr></thead><tbody id="dashboard-table-body"></tbody></table></div>
     </div>
+
+    <div class="dashboard-card" id="github-monitor-card">
+      <h2>Monitor de desenvolvimento GitHub alinhado ao Manual CMH v2.0</h2>
+      <p class="lead">O painel cruza commits, pull requests e execuções de CI com os módulos técnicos do manual. A evidência encontrada <strong>não marca automaticamente o aceite</strong>; ela mostra cobertura de código para orientar revisão e atualização dos switches do roadmap.</p>
+      <div class="manual-note"><strong>Escopo monitorado:</strong> segurança/tenancy, contrato e validação, catálogo e custo DDP, agentes Nexus/Dragon/Atlas/Hermes, billing Asaas, rastreamento e certificados, DUIMP/Portal Único, mobile e portais de parceiros. O manual define a regra; o GitHub fornece a evidência técnica.</div>
+      <div class="github-config">
+        <label>Repositório GitHub<input id="github-repo" value="conecta-market-hub-org/CMH" placeholder="organização/repositório" autocomplete="off"></label>
+        <label>Branch<input id="github-branch" value="main" placeholder="main" autocomplete="off"></label>
+        <label>Token opcional<input id="github-token" type="password" placeholder="necessário para repo privado" autocomplete="off"></label>
+        <button id="github-refresh" class="github-refresh" type="button">Atualizar GitHub</button>
+      </div>
+      <p id="github-status" class="github-status">Informe o repositório e clique em “Atualizar GitHub”. O token fica apenas na memória desta página.</p>
+      <div class="github-monitor-grid">
+        <div class="github-kpi"><span>Cobertura do manual</span><strong id="github-coverage">—</strong><small>módulos com evidência em commits/PRs</small></div>
+        <div class="github-kpi"><span>Alinhamento ponderado</span><strong id="github-alignment">—</strong><small>peso técnico do manual identificado</small></div>
+        <div class="github-kpi"><span>PRs mesclados</span><strong id="github-merged-prs">—</strong><small>taxa de merge entre PRs fechados</small></div>
+        <div class="github-kpi"><span>CI aprovado</span><strong id="github-ci">—</strong><small>execuções concluídas com sucesso</small></div>
+      </div>
+      <div class="github-table-wrap"><table class="github-table"><thead><tr><th>Módulo do manual</th><th>Milestone</th><th>Peso técnico</th><th>Evidência GitHub</th><th>Status de acompanhamento</th></tr></thead><tbody id="github-module-body"><tr><td colspan="5">Nenhum repositório consultado.</td></tr></tbody></table></div>
+    </div>
   </section>
 
 
@@ -890,6 +926,79 @@ flowchart TD
       M4: 'FinTech e Gateway SaaS', M5: 'Marketplace e Corporate', M6: 'React Native e lojas', M7: 'Portais de parceiros'
     };
     const percentNumber = (value) => Number.parseFloat(String(value).replace('%', '').replace(',', '.')) || 0;
+
+    const manualModules = [
+      { id:'security', label:'Segurança, tenancy e LGPD', milestone:'M1', weight:8, keys:['tenancy','rls','lgpd','security','auth','organization','orgid','permission','certificate digital'] },
+      { id:'contract', label:'Contrato, validação e estados', milestone:'M1', weight:5, keys:['zod','contract','domain','state','validation','schema','packages/contract'] },
+      { id:'catalog', label:'Catálogo, produto e NCM', milestone:'M2', weight:8, keys:['catalog','product','ncm','supplier','proforma','packing list','intmart'] },
+      { id:'landed', label:'Custo de importação e DDP', milestone:'M2', weight:12, keys:['landed-cost','landed cost','fiscal','tribut','ddp','incoterm','cambio','frete','insurance'] },
+      { id:'agents', label:'Nexus, Dragon, Atlas e Hermes', milestone:'M3', weight:12, keys:['nexus','dragon','atlas','hermes','agent','openclaw','orchestrat','scout','duty','freight'] },
+      { id:'billing', label:'Assinaturas, Asaas e split', milestone:'M4', weight:10, keys:['asaas','billing','subscription','payment','split','webhook','pix','invoice'] },
+      { id:'tracking', label:'ShipsGo, rastreamento e certificados', milestone:'M5', weight:12, keys:['tracking','shipment','shipsgo','shipment-tracking','certificate','compliance','eta','delivered','alert'] },
+      { id:'duimp', label:'Catálogo Portal Único e DUIMP', milestone:'M5', weight:10, keys:['duimp','siscomex','portal unico','portal único','despachante','customs','lpco','anuencia'] },
+      { id:'mobile', label:'React Native e publicação mobile', milestone:'M6', weight:8, keys:['react native','mobile','expo','android','ios','store','app'] },
+      { id:'partners', label:'Portais e acesso de parceiros', milestone:'M7', weight:15, keys:['partner','portal','trading','broker','ocp','designer','processaccessgrant','moderation','moderacao','chat'] }
+    ];
+    const githubText = (item) => `${item.title || ''} ${item.body || ''} ${item.commit || ''} ${item.message || ''} ${item.path || ''}`.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const moduleMatches = (text) => manualModules.filter((module) => module.keys.some((key) => text.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g,''))));
+    const githubFetch = async (path, token) => {
+      const headers = { Accept:'application/vnd.github+json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(`https://api.github.com${path}`, { headers });
+      if (!response.ok) throw new Error(`GitHub ${response.status}`);
+      return response.json();
+    };
+    const renderGithubModules = (evidence) => {
+      const body = document.getElementById('github-module-body');
+      body.innerHTML = manualModules.map((module) => {
+        const found = evidence[module.id] || 0;
+        const status = found ? 'Evidência encontrada — revisar aceite' : 'Sem evidência encontrada';
+        return `<tr><td>${module.label}</td><td>${module.milestone} · ${milestoneNames[module.milestone]}</td><td>${module.weight}%</td><td>${found} ocorrência(s)</td><td class="${found ? 'evidence-ok' : 'evidence-pending'}">${status}</td></tr>`;
+      }).join('');
+    };
+    const updateGithubMonitor = async () => {
+      const repo = document.getElementById('github-repo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/$/,'');
+      const branch = document.getElementById('github-branch').value.trim() || 'main';
+      const token = document.getElementById('github-token').value.trim();
+      const status = document.getElementById('github-status');
+      if (!/^[^/]+\/[^/]+$/.test(repo)) { status.textContent = 'Use o formato organização/repositório.'; return; }
+      status.textContent = 'Consultando commits, pull requests e CI no GitHub…';
+      try {
+        const results = await Promise.allSettled([
+          githubFetch(`/repos/${repo}/pulls?state=all&per_page=100&sort=updated`, token),
+          githubFetch(`/repos/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=100`, token),
+          githubFetch(`/repos/${repo}/actions/runs?branch=${encodeURIComponent(branch)}&per_page=30`, token)
+        ]);
+        const [prsResult, commitsResult, runsResult] = results;
+        if (prsResult.status === 'rejected' && commitsResult.status === 'rejected') throw new Error('Não foi possível ler o repositório; para repo privado, informe um token com escopo de leitura.');
+        const prs = prsResult.status === 'fulfilled' ? prsResult.value : [];
+        const commits = commitsResult.status === 'fulfilled' ? commitsResult.value : [];
+        const runs = runsResult.status === 'fulfilled' ? (runsResult.value.workflow_runs || []) : [];
+        const evidence = Object.fromEntries(manualModules.map((module) => [module.id, 0]));
+        [...prs.map((pr) => ({ title:pr.title, body:pr.body, path:pr.head?.ref })), ...commits.map((commit) => ({ message:commit.commit?.message, body:commit.commit?.body }))].forEach((item) => moduleMatches(githubText(item)).forEach((module) => evidence[module.id]++));
+        const matched = manualModules.filter((module) => evidence[module.id] > 0);
+        const coverage = manualModules.length ? (matched.length / manualModules.length) * 100 : 0;
+        const alignment = manualModules.reduce((sum, module) => sum + (evidence[module.id] ? module.weight : 0), 0);
+        const closedPrs = prs.filter((pr) => pr.state === 'closed');
+        const mergedPrs = prs.filter((pr) => pr.merged_at);
+        const mergeRate = closedPrs.length ? (mergedPrs.length / closedPrs.length) * 100 : 0;
+        const completedRuns = runs.filter((run) => run.status === 'completed');
+        const successfulRuns = completedRuns.filter((run) => run.conclusion === 'success');
+        const ciRate = completedRuns.length ? (successfulRuns.length / completedRuns.length) * 100 : null;
+        document.getElementById('github-coverage').textContent = `${coverage.toFixed(0)}%`;
+        document.getElementById('github-alignment').textContent = `${alignment.toFixed(0)}%`;
+        document.getElementById('github-merged-prs').textContent = `${mergedPrs.length}/${closedPrs.length || prs.length} (${mergeRate.toFixed(0)}%)`;
+        document.getElementById('github-ci').textContent = ciRate === null ? 'n/d' : `${ciRate.toFixed(0)}%`;
+        renderGithubModules(evidence);
+        const privateHint = prsResult.status === 'rejected' || commitsResult.status === 'rejected' ? ' Parte dos dados exige token de leitura.' : '';
+        status.textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}: ${commits.length} commits, ${prs.length} PRs e ${runs.length} execuções de CI.${privateHint}`;
+      } catch (error) {
+        document.getElementById('github-coverage').textContent = '—'; document.getElementById('github-alignment').textContent = '—'; document.getElementById('github-merged-prs').textContent = '—'; document.getElementById('github-ci').textContent = '—';
+        status.textContent = error.message || 'Falha ao consultar o GitHub.';
+      }
+    };
+    document.getElementById('github-refresh').addEventListener('click', updateGithubMonitor);
+
     const getHistoryDate = (point) => {
       const candidates = [point.timestamp, point.date && `${point.date}T12:00:00`, point.date];
       for (const candidate of candidates) {
