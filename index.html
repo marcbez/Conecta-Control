@@ -62,6 +62,8 @@
     .progress-save-btn:hover { background: #dff6e9; }
     .progress-save-status { display: block; margin-top: 5px; color: var(--muted); font-size: .7rem; text-align: center; }
     .act-id { display: inline-block; min-width: 3.9em; margin-right: 4px; padding: 1px 6px; border-radius: 5px; background: #e7f3ff; color: var(--navy); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78em; font-weight: 800; text-align: center; white-space: nowrap; }
+    .act-meta { display: block; margin-top: 4px; color: var(--muted); font-size: .68rem; line-height: 1.25; }
+    .activity-switch input:disabled + .activity-slider { cursor: not-allowed; opacity: .55; }
     .activity-switch { position: relative; display: inline-block; width: 44px; height: 24px; vertical-align: middle; }
     .activity-switch input { width: 0; height: 0; opacity: 0; }
     .activity-slider { position: absolute; inset: 0; border-radius: 999px; background: #cbd5e1; cursor: pointer; transition: .2s; }
@@ -240,13 +242,14 @@
         <h1 class="login-title">Bem-vindo de volta</h1>
         <p class="login-subtitle">Acesse o roadmap e acompanhe a evolução do seu projeto.</p>
         <form id="login-form" class="login-form" novalidate>
-          <div class="login-field"><label for="login-email">E-mail ou usuário</label><input id="login-email" name="email" type="text" autocomplete="username" placeholder="seu.usuario" required></div>
-          <div class="login-field"><label for="login-password">Senha</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required></div>
-          <div class="login-options"><label class="login-check"><input id="login-remember" type="checkbox"> <span>Lembrar acesso</span></label><a class="login-link" href="#login" id="login-forgot">Esqueci minha senha</a></div>
+          <div class="login-field"><label for="login-endpoint">Fonte central (endereço do Apps Script)</label><input id="login-endpoint" name="endpoint" type="url" autocomplete="url" placeholder="https://script.google.com/macros/s/…/exec" required></div>
+          <div class="login-field"><label for="login-email">Usuário</label><input id="login-email" name="email" type="text" autocomplete="username" placeholder="seu.usuario" required></div>
+          <div class="login-field"><label for="login-password">Token de acesso</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Token entregue pelo administrador" required></div>
+          <div class="login-options"><label class="login-check"><input id="login-remember" type="checkbox"> <span>Lembrar acesso</span></label><a class="login-link" href="#login" id="login-forgot">Esqueci meu token</a></div>
           <p id="login-message" class="login-message" role="alert" aria-live="polite"></p>
           <button class="login-submit" type="submit">Entrar no roadmap</button>
         </form>
-        <p class="login-footnote">A tela de acesso está pronta para ser conectada a uma autenticação real. Nesta versão, o formulário funciona como gate de interface e não substitui uma camada de segurança no servidor.</p>
+        <p class="login-footnote">Usuário e token são conferidos pela fonte central a cada leitura e a cada marcação; o servidor registra quem marcou e quando. A página em si é estática: o login protege a homologação e o progresso, não o texto do roadmap.</p>
       </div>
     </div>
     <div class="login-visual" aria-hidden="true">
@@ -295,9 +298,11 @@
         <div class="progress-total"><strong id="progress-total-value">0%</strong><span>acumulado<br>das atividades</span></div>
         <div class="progress-track" aria-label="Progresso total"><div id="progress-total-fill" class="progress-fill"></div></div>
         <div id="milestone-progress-list"></div>
-        <p class="progress-note">Use os switches da tabela de atividades (M1-01 a M7-08) ou clique em um quadro do fluxograma e use “Marcar como concluída”.</p>
-        <button id="save-progress-local" class="progress-save-btn" type="button">Salvar estado no navegador</button>
-        <span id="progress-save-status" class="progress-save-status" role="status" aria-live="polite">Salvamento automático ativado.</span>
+        <p class="progress-note">Use os switches da tabela de atividades (M1-01 a M7-08) ou clique em um quadro do fluxograma e use “Marcar como concluída”. Cada marcação é gravada na fonte central com o seu usuário e a data.</p>
+        <button id="refresh-central-state" class="progress-save-btn" type="button">Atualizar da fonte central</button>
+        <span id="progress-save-status" class="progress-save-status" role="status" aria-live="polite">Conectando à fonte central…</span>
+        <span id="session-info" class="progress-save-status"></span>
+        <button id="logout-btn" class="progress-pdf-btn" type="button">Sair</button>
         <button id="export-progress-pdf" class="progress-pdf-btn" type="button">Exportar relatório de progresso em PDF</button>
       </div>
     </aside>
@@ -583,6 +588,7 @@ flowchart TD
             <div class="activity-kpi"><strong id="activity-milestone-pct">—</strong><span>do milestone</span></div>
           </div>
           <p><strong>Milestone:</strong> <span id="activity-milestone">—</span></p>
+          <p><strong>Homologação:</strong> <span id="activity-homologation">—</span></p>
           <p><strong>Contribuição:</strong> <span id="activity-description">—</span></p>
           <div class="activity-modal-actions"><button id="activity-complete-toggle" class="complete-btn" type="button" disabled>Marcar como concluída</button></div>
           <p class="activity-hint">Percentuais conforme a matriz de contribuição real dos quadros do fluxograma.</p>
@@ -601,6 +607,7 @@ flowchart TD
           <p><strong>Milestone:</strong> <span id="timeline-modal-milestone">—</span></p>
           <p><strong>Atividade:</strong> <span id="timeline-modal-activity">—</span></p>
           <p><strong>Ação registrada:</strong> <span id="timeline-modal-action">—</span></p>
+          <p><strong>Registrado por:</strong> <span id="timeline-modal-user">—</span></p>
           <p><strong>Descrição:</strong> <span id="timeline-modal-description">—</span></p>
         </div>
       </dialog>
@@ -612,7 +619,7 @@ flowchart TD
         <h2>Progresso por milestone</h2>
         <table><thead><tr><th>Milestone</th><th>Peso no projeto</th><th>Concluído no milestone</th><th>Contribuição acumulada</th><th>Status</th></tr></thead><tbody id="progress-report-milestones"></tbody></table>
         <h2>Atividades concluídas</h2>
-        <table><thead><tr><th>Atividade</th><th>Milestone</th><th>% do projeto</th><th>% do milestone</th><th>Descrição</th></tr></thead><tbody id="progress-report-activities"></tbody></table>
+        <table><thead><tr><th>Atividade</th><th>Milestone</th><th>% do projeto</th><th>% do milestone</th><th>Homologada por</th><th>Descrição</th></tr></thead><tbody id="progress-report-activities"></tbody></table>
       </section>
 
       <section id="ponderacao">
@@ -845,22 +852,77 @@ flowchart TD
 
 
   <script>
+    // Sessão do Control: endereço da fonte central, usuário e token. O endereço
+    // não fica no código; o administrador entrega os três dados a cada pessoa.
+    window.controlSession = (() => {
+      const KEY = 'conecta-control-session';
+      const read = (store) => { try { return JSON.parse(store.getItem(KEY) || 'null'); } catch (error) { return null; } };
+      return {
+        get: () => read(sessionStorage) || read(localStorage),
+        save: (session, remember) => {
+          try {
+            sessionStorage.setItem(KEY, JSON.stringify(session));
+            if (remember) localStorage.setItem(KEY, JSON.stringify(session));
+            else localStorage.removeItem(KEY);
+            localStorage.setItem('conecta-control-endpoint', session.endpoint);
+          } catch (error) { /* sem armazenamento: a sessão vale só nesta aba */ }
+        },
+        clear: () => { try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); } catch (error) { /* sem armazenamento */ } }
+      };
+    })();
+    // POST com text/plain não dispara o preflight de CORS, que o Apps Script não atende.
+    window.controlApi = async (action, payload = {}, session = window.controlSession.get()) => {
+      if (!session || !session.endpoint) throw new Error('Fonte central não configurada.');
+      const response = await fetch(session.endpoint, {
+        method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ ...payload, action, user: session.user, token: session.token })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    };
     (() => {
       const body = document.body;
       const form = document.getElementById('login-form');
       const message = document.getElementById('login-message');
       const loginScreen = document.getElementById('login-screen');
+      const endpointInput = document.getElementById('login-endpoint');
+      const userInput = document.getElementById('login-email');
+      const submit = form.querySelector('.login-submit');
       const setAuthenticated = () => { body.classList.add('authenticated'); loginScreen.setAttribute('hidden', ''); };
-      if (sessionStorage.getItem('conecta-market-login') === 'authenticated') setAuthenticated();
-      form.addEventListener('submit', (event) => {
+      window.controlShowLogin = (text = '') => {
+        window.controlSession.clear();
+        body.classList.remove('authenticated');
+        loginScreen.removeAttribute('hidden');
+        message.textContent = text;
+      };
+      try { endpointInput.value = localStorage.getItem('conecta-control-endpoint') || ''; } catch (error) { /* sem armazenamento */ }
+      const existing = window.controlSession.get();
+      if (existing) { userInput.value = existing.user; setAuthenticated(); }
+      form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
-        if (!email || !password) { message.textContent = 'Informe o usuário e a senha para continuar.'; return; }
-        sessionStorage.setItem('conecta-market-login', 'authenticated');
-        setAuthenticated();
+        const endpoint = endpointInput.value.trim();
+        const user = userInput.value.trim().toLowerCase();
+        const token = document.getElementById('login-password').value.trim();
+        if (!endpoint || !user || !token) { message.textContent = 'Informe a fonte central, o usuário e o token.'; return; }
+        try { if (!/^https?:$/.test(new URL(endpoint).protocol)) throw new Error(); } catch (error) { message.textContent = 'O endereço da fonte central não é uma URL válida.'; return; }
+        message.textContent = 'Conferindo o acesso…';
+        submit.disabled = true;
+        try {
+          const result = await window.controlApi('whoami', {}, { endpoint, user, token });
+          if (!result.ok) { message.textContent = result.error || 'Acesso negado.'; return; }
+          const session = { endpoint, user, token, name: result.user.name, canMark: result.user.canMark };
+          window.controlSession.save(session, document.getElementById('login-remember').checked);
+          document.getElementById('login-password').value = '';
+          message.textContent = '';
+          setAuthenticated();
+          document.dispatchEvent(new CustomEvent('control:login', { detail: session }));
+        } catch (error) {
+          message.textContent = 'Não foi possível falar com a fonte central. Confira o endereço e a conexão.';
+        } finally {
+          submit.disabled = false;
+        }
       });
-      document.getElementById('login-forgot').addEventListener('click', (event) => { event.preventDefault(); message.textContent = 'A recuperação de senha será conectada ao provedor de autenticação.'; });
+      document.getElementById('login-forgot').addEventListener('click', (event) => { event.preventDefault(); message.textContent = 'Peça um novo token ao administrador do Control. Quando ele gera outro, o anterior deixa de valer.'; });
     })();
   </script>
 
@@ -868,7 +930,6 @@ flowchart TD
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
     mermaid.initialize({ startOnLoad: true, securityLevel: 'strict', theme: 'base', themeVariables: { primaryColor: '#eef7ff', primaryTextColor: '#102a43', primaryBorderColor: '#1677c8', lineColor: '#627d98', secondaryColor: '#f0ebff', tertiaryColor: '#fff8eb' } });
 
-    const CENTRAL_HISTORY_API = 'https://script.google.com/macros/s/AKfycbzxKh2QzJVh5uURcbvY5DyZt717X5ZzSeXwtsD91JKbYjzBvuhtyv7DS5BeS9dqSPKDaA/exec';
 
     let diagramZoom = 1;
     const zoomLevel = document.getElementById('zoom-level');
@@ -1036,8 +1097,23 @@ flowchart TD
       }
       return new Date();
     };
+    // Estado oficial: vem da fonte central (Apps Script + planilha), com quem
+    // marcou e quando. O navegador guarda só uma cópia para exibir se a fonte
+    // cair; nessa situação nada pode ser marcado.
     let completedActivities = new Set();
-    try { completedActivities = new Set(JSON.parse(localStorage.getItem('conecta-market-completed-activities') || '[]')); } catch (error) { completedActivities = new Set(); }
+    let activityMeta = {};
+    let centralReady = false;
+    let serverProgress = null;
+    const currentSession = () => window.controlSession && window.controlSession.get();
+    const canMark = () => Boolean(centralReady && currentSession() && currentSession().canMark);
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const formatDateTime = (iso) => { const date = new Date(iso); return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); };
+    const formatPct = (value) => `${Number(value).toFixed(2).replace('.', ',')}%`;
+    const setStatus = (text) => { const status = document.getElementById('progress-save-status'); if (status) status.textContent = text; };
+    const STATE_CACHE = 'conecta-control-last-state';
+    // Marcações feitas antes da fonte central ficavam só neste navegador.
+    let localMarks = new Set();
+    try { localMarks = new Set(JSON.parse(localStorage.getItem('conecta-market-completed-activities') || '[]')); } catch (error) { localMarks = new Set(); }
     // Migração única da matriz antiga (32 quadros) para os IDs do Anexo III.
     // Linhas antigas equivalentes a uma atividade viram o ID correspondente;
     // blocos agregados (M1, M3, M6 e M7 inteiros) não são convertidos, porque
@@ -1073,117 +1149,194 @@ flowchart TD
       "Entrega e banco documental": 'M5-18'
     };
     const activityIds = new Set(activityRows.map((row) => row.label));
-    const unknownStored = [...completedActivities].filter((label) => !activityIds.has(label));
+    const unknownStored = [...localMarks].filter((label) => !activityIds.has(label));
     if (unknownStored.length) {
       const unmapped = unknownStored.filter((label) => !legacyActivityIds[label]);
-      completedActivities = new Set([...completedActivities].map((label) => legacyActivityIds[label] || label).filter((label) => activityIds.has(label)));
+      localMarks = new Set([...localMarks].map((label) => legacyActivityIds[label] || label).filter((label) => activityIds.has(label)));
       try {
         if (!localStorage.getItem('conecta-market-completed-activities-v32-backup')) localStorage.setItem('conecta-market-completed-activities-v32-backup', localStorage.getItem('conecta-market-completed-activities') || '[]');
-        localStorage.setItem('conecta-market-completed-activities', JSON.stringify([...completedActivities]));
+        localStorage.setItem('conecta-market-completed-activities', JSON.stringify([...localMarks]));
         if (unmapped.length) localStorage.setItem('conecta-market-unmapped-activities', JSON.stringify(unmapped));
       } catch (error) { /* migração segue apenas em memória */ }
     }
-    const showMigrationNote = () => {
-      const note = document.getElementById('migration-note');
-      let unmapped = [];
-      try { unmapped = JSON.parse(localStorage.getItem('conecta-market-unmapped-activities') || '[]'); } catch (error) { unmapped = []; }
-      if (!note || !unmapped.length) { if (note) note.hidden = true; return; }
-      note.innerHTML = '<strong>Revisão necessária após a troca para as 54 atividades:</strong> estes blocos da matriz antiga estavam marcados como concluídos e não foram convertidos, porque cada um corresponde a várias atividades do Anexo III. Marque individualmente as atividades que tiverem aceite.<ul>' + unmapped.map((label) => `<li>${label.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</li>`).join('') + '</ul><button type="button" class="zoom-btn" id="migration-note-dismiss">Entendi, ocultar aviso</button>';
-      note.hidden = false;
-      document.getElementById('migration-note-dismiss').addEventListener('click', () => {
-        try { localStorage.removeItem('conecta-market-unmapped-activities'); } catch (error) { /* sem armazenamento */ }
-        note.hidden = true;
-      });
-    };
-    showMigrationNote();
-    // O histórico temporal é centralizado no Google Sheets. O localStorage guarda
-    // apenas o estado dos switches; ele não é fonte de dados para a linha do tempo.
     let progressHistory = [];
     try { localStorage.removeItem('conecta-market-progress-history'); } catch (error) { /* limpeza opcional */ }
     const calculateTotalProgress = () => activityRows.reduce((sum, row) => sum + (completedActivities.has(row.label) ? percentNumber(row.projectPct) : 0), 0);
-    const recordProgressHistory = (activity = null, action = 'Estado salvo manualmente') => {
-      const now = new Date();
-      const point = {
-        date: now.toISOString().slice(0, 10), timestamp: now.toISOString(),
-        progress: Number(calculateTotalProgress().toFixed(2)),
-        completed: activityRows.filter((row) => completedActivities.has(row.label)).length,
-        activity: activity ? activityDisplay(activity) : 'Estado geral do projeto',
-        milestone: activity ? activity.milestone : 'M1–M7',
-        description: activity ? activity.description : 'Registro manual do estado acumulado das atividades.',
-        action
+    const rowById = (id) => activityRows.find((row) => row.label === id);
+    const historyPoint = (event) => {
+      const row = rowById(event.activity);
+      return {
+        ...event,
+        activity: row ? activityDisplay(row) : event.activity,
+        milestone: row ? row.milestone : 'M1–M7',
+        action: event.action === 'concluida' ? 'Atividade concluída' : event.action === 'reaberta' ? 'Atividade reaberta' : event.action,
+        description: event.note || (row ? row.description : ''),
+        by: event.name || event.user
       };
-      syncProgressEvent(point);
     };
-    const syncProgressEvent = async (point) => {
+    // Pontos da versão anterior (sem identificação de quem registrou).
+    const legacyPoint = (item) => ({
+      ...item,
+      progress: Number(item.progressPct ?? item.progress) || 0,
+      completed: Number(item.completedCount ?? item.completed) || 0,
+      timestamp: item.timestamp || new Date(`${item.date}T12:00:00`).toISOString(),
+      action: item.eventAction || item.action,
+      by: 'registro anterior, sem identificação'
+    });
+    const homologationText = (id) => {
+      const meta = activityMeta[id];
+      if (!meta) return 'Não homologada.';
+      return `${meta.done ? 'Concluída' : 'Reaberta'} por ${meta.name || meta.by} em ${formatDateTime(meta.at)}.`;
+    };
+    const refreshSwitches = () => {
+      const session = currentSession();
+      document.querySelectorAll('#fluxo-peso-table tr[data-id]').forEach((tr) => {
+        const id = tr.dataset.id;
+        const input = tr.querySelector('.activity-switch input');
+        if (!input) return;
+        input.checked = completedActivities.has(id);
+        input.disabled = !canMark() || tr.dataset.pending === '1';
+        const meta = activityMeta[id];
+        const line = tr.querySelector('.act-meta');
+        if (line) line.textContent = meta ? `${meta.done ? '✓' : '↶'} ${meta.name || meta.by} · ${formatDateTime(meta.at)}` : '';
+        const label = tr.querySelector('.activity-switch');
+        if (label) label.title = !centralReady ? 'Fonte central indisponível: marcações bloqueadas.' : session && !session.canMark ? 'Seu acesso é somente leitura.' : homologationText(id);
+      });
+      const info = document.getElementById('session-info');
+      if (info) info.textContent = session ? `${session.name || session.user} · ${session.canMark ? 'pode homologar' : 'somente leitura'}` : '';
+    };
+    const cacheState = (data) => {
+      try { localStorage.setItem(STATE_CACHE, JSON.stringify({ savedAt: new Date().toISOString(), data: { state: data.state, progress: data.progress, history: data.history, legacy: data.legacy } })); } catch (error) { /* cópia opcional */ }
+    };
+    const applyCentralState = (data, cached = false) => {
+      activityMeta = data.state || {};
+      completedActivities = new Set(Object.keys(activityMeta).filter((id) => activityMeta[id].done && activityIds.has(id)));
+      serverProgress = typeof data.progress === 'number' ? data.progress : null;
+      const legacy = Array.isArray(data.legacy) ? data.legacy.filter((item) => item.source !== 'final-api-test').map(legacyPoint) : [];
+      progressHistory = [...legacy, ...(data.history || []).map(historyPoint)]
+        .sort((a, b) => getHistoryDate(a) - getHistoryDate(b)).slice(-90);
+      centralReady = !cached;
+      refreshSwitches();
+      renderProgressSummary();
+      renderLocalMarksNote();
+    };
+    const checkWeights = () => {
+      const local = calculateTotalProgress();
+      if (serverProgress !== null && Math.abs(local - serverProgress) > 0.01) setStatus(`Atenção: a fonte central calcula ${formatPct(serverProgress)} e esta página ${formatPct(local)}. Os pesos estão diferentes; vale o da fonte central.`);
+    };
+    const handleAuthFailure = (data) => {
+      if (data && data.code === 'auth' && window.controlShowLogin) {
+        window.controlShowLogin('Seu acesso não é mais aceito pela fonte central. Entre de novo ou peça um novo token.');
+        return true;
+      }
+      return false;
+    };
+    const loadCentralState = async () => {
+      if (!currentSession()) { setStatus('Entre com usuário e token para ver a homologação.'); return; }
+      setStatus('Lendo a fonte central…');
       try {
-        const params = new URLSearchParams({
-          action: 'append', timestamp: point.timestamp, date: point.date,
-          activity: point.activity, milestone: point.milestone, eventAction: point.action,
-          progressPct: String(point.progress), completedCount: String(point.completed),
-          description: point.description, source: 'conecta-market-html', userKey: ''
-        });
-        // Apps Script redireciona POSTs para googleusercontent.com; no navegador
-        // isso pode bloquear o CORS. O endpoint GET grava de forma idempotente
-        // por evento e permite confirmação direta da resposta JSON.
-        const response = await fetch(`${CENTRAL_HISTORY_API}?${params.toString()}`, { mode: 'cors', redirect: 'follow' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const result = await response.json();
-        if (!result.ok || !result.saved) throw new Error(result.error || 'Gravação não confirmada');
-        // O ponto só entra no gráfico depois de reler a fonte central.
-        await loadCentralHistory();
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Confirmado no Google Sheets às ${new Date().toLocaleTimeString('pt-BR')}.`;
+        const data = await window.controlApi('state');
+        if (!data.ok) { if (handleAuthFailure(data)) return; throw new Error(data.error || 'resposta inválida'); }
+        applyCentralState(data);
+        cacheState(data);
+        setStatus(`Fonte central lida às ${new Date().toLocaleTimeString('pt-BR')}.`);
+        checkWeights();
       } catch (error) {
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Não foi possível confirmar no Google Sheets; o ponto não foi exibido.`;
+        let cache = null;
+        try { cache = JSON.parse(localStorage.getItem(STATE_CACHE) || 'null'); } catch (cacheError) { cache = null; }
+        if (cache && cache.data) {
+          applyCentralState(cache.data, true);
+          setStatus(`Fonte central indisponível. Exibindo a cópia de ${formatDateTime(cache.savedAt)}; marcações bloqueadas.`);
+        } else {
+          centralReady = false;
+          refreshSwitches();
+          setStatus('Fonte central indisponível; marcações bloqueadas.');
+        }
       }
     };
-    const loadCentralHistory = async () => {
+    const setPending = (id, pending) => {
+      const tr = document.querySelector(`#fluxo-peso-table tr[data-id="${id}"]`);
+      if (tr) tr.dataset.pending = pending ? '1' : '';
+      refreshSwitches();
+    };
+    const markActivity = async (activity, done, note = '') => {
+      if (!canMark()) {
+        const session = currentSession();
+        setStatus(session && !session.canMark ? 'Seu acesso é somente leitura.' : 'Fonte central indisponível; marcações bloqueadas.');
+        refreshSwitches();
+        return false;
+      }
+      setPending(activity.label, true);
+      setStatus(`Registrando ${activity.label}…`);
       try {
-        const response = await fetch(`${CENTRAL_HISTORY_API}?limit=90`, { mode: 'cors', redirect: 'follow' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json();
-        const remote = Array.isArray(payload.history) ? payload.history
-          .filter((item) => item.source !== 'final-api-test')
-          .map((item) => ({
-            ...item,
-            progress: Number(item.progressPct ?? item.progress) || 0,
-            completed: Number(item.completedCount ?? item.completed) || 0,
-            timestamp: item.timestamp || new Date(`${item.date}T12:00:00`).toISOString()
-          })) : [];
-        progressHistory = remote.slice(-90);
-        renderDashboard();
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Histórico centralizado carregado do Google Sheets às ${new Date().toLocaleTimeString('pt-BR')}.`;
+        const data = await window.controlApi('mark', { activityId: activity.label, done, note });
+        if (!data.ok) { if (handleAuthFailure(data)) return false; throw new Error(data.error || 'resposta inválida'); }
+        applyCentralState(data);
+        cacheState(data);
+        const meta = activityMeta[activity.label];
+        setStatus(data.unchanged
+          ? `${activity.label} já estava ${done ? 'concluída' : 'pendente'} na fonte central.`
+          : `${activity.label} ${done ? 'concluída' : 'reaberta'} por ${meta ? meta.name : data.user.name} às ${new Date().toLocaleTimeString('pt-BR')}.`);
+        checkWeights();
+        return true;
       } catch (error) {
-        const status = document.getElementById('progress-save-status');
-        progressHistory = [];
-        renderDashboard();
-        if (status) status.textContent = 'Google Sheets indisponível; a linha cronológica permanece vazia.';
+        setStatus(`${activity.label} não foi registrada: ${error.message}`);
+        return false;
+      } finally {
+        setPending(activity.label, false);
       }
     };
-    const saveCompletedActivities = (activity = null, action = 'Estado salvo manualmente') => {
+    let registeringLocalMarks = false;
+    const forgetLocalMarks = (includeUnmapped) => {
+      localMarks = new Set();
       try {
-        localStorage.setItem('conecta-market-completed-activities', JSON.stringify([...completedActivities]));
-        recordProgressHistory(activity, action);
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Salvo no navegador às ${new Date().toLocaleTimeString('pt-BR')}.`;
-      } catch (error) {
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = 'Não foi possível salvar neste navegador.';
+        localStorage.removeItem('conecta-market-completed-activities');
+        if (includeUnmapped) localStorage.removeItem('conecta-market-unmapped-activities');
+      } catch (error) { /* sem armazenamento */ }
+    };
+    const renderLocalMarksNote = () => {
+      const note = document.getElementById('migration-note');
+      if (!note || registeringLocalMarks) return;
+      let unmapped = [];
+      try { unmapped = JSON.parse(localStorage.getItem('conecta-market-unmapped-activities') || '[]'); } catch (error) { unmapped = []; }
+      const pending = [...localMarks].filter((id) => !completedActivities.has(id) && rowById(id));
+      if (!centralReady || (!pending.length && !unmapped.length)) { note.hidden = true; return; }
+      let html = '<strong>Marcações antigas deste navegador:</strong> ficavam só neste computador e não contam no progresso oficial.';
+      if (pending.length) {
+        html += `<ul>${pending.map((id) => `<li>${escapeHtml(activityDisplay(rowById(id)))}</li>`).join('')}</ul>`;
+        html += canMark()
+          ? `<button type="button" class="zoom-btn" id="local-marks-register">Registrar ${pending.length === 1 ? 'esta marcação' : `estas ${pending.length} marcações`} em meu nome</button> `
+          : '<p>Peça a quem pode homologar para registrá-las.</p>';
       }
+      if (unmapped.length) html += `<p>Blocos da matriz antiga que precisam ser revistos atividade por atividade:</p><ul>${unmapped.map((label) => `<li>${escapeHtml(label)}</li>`).join('')}</ul>`;
+      html += '<button type="button" class="zoom-btn" id="local-marks-dismiss">Descartar marcações antigas</button>';
+      note.innerHTML = html;
+      note.hidden = false;
+      const register = document.getElementById('local-marks-register');
+      if (register) register.addEventListener('click', async () => {
+        registeringLocalMarks = true;
+        register.disabled = true;
+        let failed = 0;
+        for (const id of pending) {
+          if (!(await markActivity(rowById(id), true, 'Registrada a partir de marcação antiga do navegador.'))) failed++;
+        }
+        registeringLocalMarks = false;
+        if (!failed) forgetLocalMarks(false);
+        renderLocalMarksNote();
+      });
+      document.getElementById('local-marks-dismiss').addEventListener('click', () => { forgetLocalMarks(true); note.hidden = true; });
     };
     const renderProgressReport = () => {
       const total = activityRows.reduce((sum, row) => sum + (completedActivities.has(row.label) ? percentNumber(row.projectPct) : 0), 0);
       document.getElementById('progress-report-date').textContent = `Atualizado em ${new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeStyle: 'short' }).format(new Date())}.`;
-      document.getElementById('progress-report-summary').innerHTML = `<p><strong>Progresso acumulado do contrato: ${total.toFixed(2).replace('.', ',')}%</strong></p><p>O relatório considera as atividades marcadas como concluídas no painel lateral e os pesos definidos na matriz do roadmap.</p>`;
+      document.getElementById('progress-report-summary').innerHTML = `<p><strong>Progresso acumulado do contrato: ${total.toFixed(2).replace('.', ',')}%</strong></p><p>O relatório considera as atividades homologadas na fonte central, com o usuário e a data registrados pelo servidor, e os pesos do Anexo III.</p>`;
       document.getElementById('progress-report-milestones').innerHTML = Object.entries(milestoneWeights).map(([id, weight]) => {
         const completed = activityRows.filter((row) => row.milestone === id && completedActivities.has(row.label)).reduce((sum, row) => sum + percentNumber(row.projectPct), 0);
         const within = weight ? Math.min(100, (completed / weight) * 100) : 0;
         const status = within >= 100 ? 'Concluído' : within > 0 ? 'Em andamento' : 'Não iniciado';
         return `<tr><td>${id} — ${milestoneNames[id]}</td><td>${weight}%</td><td>${within.toFixed(0)}%</td><td>${completed.toFixed(2).replace('.', ',')}%</td><td>${status}</td></tr>`;
       }).join('');
-      document.getElementById('progress-report-activities').innerHTML = activityRows.filter((row) => completedActivities.has(row.label)).map((row) => `<tr><td>${activityDisplay(row)}</td><td>${row.milestone}</td><td>${row.projectPct}</td><td>${row.milestonePct}</td><td>${row.description}</td></tr>`).join('') || '<tr><td colspan="5">Nenhuma atividade foi marcada como concluída.</td></tr>';
+      document.getElementById('progress-report-activities').innerHTML = activityRows.filter((row) => completedActivities.has(row.label)).map((row) => `<tr><td>${activityDisplay(row)}</td><td>${row.milestone}</td><td>${row.projectPct}</td><td>${row.milestonePct}</td><td>${escapeHtml(activityMeta[row.label] ? `${activityMeta[row.label].name} em ${formatDateTime(activityMeta[row.label].at)}` : '—')}</td><td>${row.description}</td></tr>`).join('') || '<tr><td colspan="6">Nenhuma atividade foi homologada.</td></tr>';
     };
     const renderTimeline = () => {
       const grid = document.getElementById('timeline-grid');
@@ -1270,26 +1423,28 @@ flowchart TD
         input.setAttribute('aria-label', `Concluir atividade ${activityDisplay(activity)}`);
         const slider = document.createElement('span');
         slider.className = 'activity-slider';
-        input.addEventListener('change', () => {
-          if (input.checked) completedActivities.add(activity.label);
-          else completedActivities.delete(activity.label);
-          saveCompletedActivities(activity, input.checked ? 'Atividade concluída' : 'Atividade reaberta');
-          renderProgressSummary();
-          if (currentActivity && currentActivity.label === activity.label) {
-            completeToggle.classList.toggle('completed', input.checked);
-            completeToggle.textContent = input.checked ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
-          }
+        input.disabled = true;
+        input.addEventListener('change', async () => {
+          const wanted = input.checked;
+          input.checked = completedActivities.has(activity.label);
+          await markActivity(activity, wanted);
+          if (currentActivity && currentActivity.label === activity.label) syncModalToggle();
         });
         label.append(input, slider);
-        cell.appendChild(label);
+        const meta = document.createElement('small');
+        meta.className = 'act-meta';
+        cell.append(label, meta);
         tableRow.appendChild(cell);
       });
     };
     decorateActivityTable();
     renderProgressSummary();
-    loadCentralHistory();
-    document.getElementById('save-progress-local').addEventListener('click', () => {
-      saveCompletedActivities();
+    loadCentralState();
+    document.addEventListener('control:login', loadCentralState);
+    document.getElementById('refresh-central-state').addEventListener('click', loadCentralState);
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      window.controlSession.clear();
+      window.location.reload();
     });
     const roadmapTab = document.getElementById('tab-roadmap');
     const dashboardTab = document.getElementById('tab-dashboard');
@@ -1379,6 +1534,14 @@ flowchart TD
     const modalDescription = document.getElementById('activity-description');
     const completeToggle = document.getElementById('activity-complete-toggle');
     let currentActivity = null;
+    const syncModalToggle = () => {
+      const done = Boolean(currentActivity && completedActivities.has(currentActivity.label));
+      completeToggle.disabled = !currentActivity || !canMark();
+      completeToggle.classList.toggle('completed', done);
+      completeToggle.textContent = done ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
+      completeToggle.title = !currentActivity ? '' : !canMark() ? 'Marcação indisponível: acesso somente leitura ou fonte central fora do ar.' : '';
+      if (currentActivity) document.getElementById('activity-homologation').textContent = homologationText(currentActivity.label);
+    };
     const openActivityModal = (node) => {
       const title = node.textContent.replace(/\s+/g, ' ').trim();
       const activity = findActivity(title);
@@ -1388,9 +1551,8 @@ flowchart TD
       modalMilestonePct.textContent = activity ? activity.milestonePct : '—';
       modalMilestone.textContent = activity ? activity.milestone : 'Quadro de controle do fluxo';
       modalDescription.textContent = activity ? activity.description : 'Ponto de controle visual do fluxo. A contribuição está incorporada à atividade operacional relacionada.';
-      completeToggle.disabled = !activity;
-      completeToggle.classList.toggle('completed', Boolean(activity && completedActivities.has(activity.label)));
-      completeToggle.textContent = activity && completedActivities.has(activity.label) ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
+      document.getElementById('activity-homologation').textContent = activity ? homologationText(activity.label) : '—';
+      syncModalToggle();
       if (typeof activityModal.showModal === 'function') activityModal.showModal();
       else activityModal.setAttribute('open', '');
     };
@@ -1402,6 +1564,7 @@ flowchart TD
       document.getElementById('timeline-modal-milestone').textContent = point.milestone || 'M1–M7';
       document.getElementById('timeline-modal-activity').textContent = point.activity || 'Registro histórico anterior à ativação do detalhamento';
       document.getElementById('timeline-modal-action').textContent = point.action || 'Estado acumulado registrado';
+      document.getElementById('timeline-modal-user').textContent = point.by || '—';
       document.getElementById('timeline-modal-description').textContent = point.description || 'O ponto representa o progresso acumulado do contrato nesta data.';
       if (timelineModal.parentElement !== document.body) document.body.appendChild(timelineModal);
       try {
@@ -1412,17 +1575,12 @@ flowchart TD
         timelineModal.setAttribute('open', '');
       }
     };
-    completeToggle.addEventListener('click', () => {
+    completeToggle.addEventListener('click', async () => {
       if (!currentActivity) return;
-      if (completedActivities.has(currentActivity.label)) completedActivities.delete(currentActivity.label);
-      else completedActivities.add(currentActivity.label);
-      const isCompleted = completedActivities.has(currentActivity.label);
-      saveCompletedActivities(currentActivity, isCompleted ? 'Atividade concluída' : 'Atividade reaberta');
-      const tableSwitch = document.querySelector(`#fluxo-peso-table tr[data-id="${currentActivity.label}"] .activity-switch input`);
-      if (tableSwitch) tableSwitch.checked = isCompleted;
-      renderProgressSummary();
-      completeToggle.classList.toggle('completed', isCompleted);
-      completeToggle.textContent = isCompleted ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
+      const activity = currentActivity;
+      completeToggle.disabled = true;
+      await markActivity(activity, !completedActivities.has(activity.label));
+      if (currentActivity === activity) syncModalToggle();
     });
     document.getElementById('activity-modal-close').addEventListener('click', () => activityModal.close());
     activityModal.addEventListener('click', (event) => { if (event.target === activityModal) activityModal.close(); });
