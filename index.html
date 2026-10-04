@@ -227,6 +227,7 @@
     .github-kpi small{display:block;color:#627d98;margin-top:4px}
     .github-status{margin:10px 0 0;color:#486581;font-size:.85rem;min-height:1.2em}
     .github-table-wrap{overflow:auto;margin-top:16px}.github-table{width:100%;border-collapse:collapse;font-size:.84rem}.github-table th,.github-table td{border-bottom:1px solid #e6edf3;padding:9px;text-align:left;vertical-align:top}.github-table th{color:#486581;background:#f7fafc}.evidence-ok{color:#087f5b;font-weight:700}.evidence-pending{color:#b45309;font-weight:700}
+    .pr-badge{display:inline-block;margin:0 4px 4px 0;padding:2px 8px;border-radius:999px;font-size:.76rem;font-weight:700;text-decoration:none;white-space:nowrap;background:#eef2f6;color:#334e68}.pr-mesclada{background:#e7f8ef;color:#087f5b}.pr-aberta{background:#e7f3ff;color:#1677c8}.pr-fechada{background:#f1f3f5;color:#627d98}
     .manual-note{border-left:4px solid #1677c8;background:#eef7ff;padding:12px 14px;border-radius:8px;margin-top:14px;color:#334e68;font-size:.88rem}
     @media (max-width:900px){.github-monitor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.github-config{grid-template-columns:1fr 1fr}.github-config button{width:100%}}
     @media (max-width:560px){.github-monitor-grid{grid-template-columns:1fr}.github-config{grid-template-columns:1fr}}
@@ -589,6 +590,7 @@ flowchart TD
           </div>
           <p><strong>Milestone:</strong> <span id="activity-milestone">—</span></p>
           <p><strong>Homologação:</strong> <span id="activity-homologation">—</span></p>
+          <p><strong>PRs vinculadas:</strong> <span id="activity-prs">—</span></p>
           <p><strong>Contribuição:</strong> <span id="activity-description">—</span></p>
           <div class="activity-modal-actions"><button id="activity-complete-toggle" class="complete-btn" type="button" disabled>Marcar como concluída</button></div>
           <p class="activity-hint">Percentuais conforme a matriz de contribuição real dos quadros do fluxograma.</p>
@@ -830,8 +832,8 @@ flowchart TD
     </div>
 
     <div class="dashboard-card" id="github-monitor-card">
-      <h2>Monitor de desenvolvimento GitHub alinhado ao Manual CMH v2.0</h2>
-      <p class="lead">O painel cruza commits, pull requests e execuções de CI com os módulos técnicos do manual. A evidência encontrada <strong>não marca automaticamente o aceite</strong>; ela mostra cobertura de código para orientar revisão e atualização dos switches do roadmap.</p>
+      <h2>Monitor GitHub: PRs por atividade do Anexo III</h2>
+      <p class="lead">Cada PR é ligada às atividades pelos IDs escritos no título ou na descrição (por exemplo <code>M1-02 - Auth, RBAC e consentimento LGPD</code> e <code>Atividades: M1-02, M1-03</code>). Uma PR pode citar várias atividades. O vínculo é evidência para revisão e <strong>não marca o aceite</strong>: a homologação continua nos switches, com credencial.</p>
       <div class="manual-note"><strong>Escopo monitorado:</strong> segurança/tenancy, contrato e validação, catálogo e custo DDP, agentes Nexus/Dragon/Atlas/Hermes, billing Asaas, rastreamento e certificados, DUIMP/Portal Único, mobile e portais de parceiros. O manual define a regra; o GitHub fornece a evidência técnica.</div>
       <div class="github-config">
         <label>Repositório GitHub<input id="github-repo" value="conecta-market-hub-org/CMH" placeholder="organização/repositório" autocomplete="off"></label>
@@ -841,11 +843,18 @@ flowchart TD
       </div>
       <p id="github-status" class="github-status">Informe o repositório e clique em “Atualizar GitHub”. O token fica apenas na memória desta página.</p>
       <div class="github-monitor-grid">
-        <div class="github-kpi"><span>Cobertura do manual</span><strong id="github-coverage">—</strong><small>módulos com evidência em commits/PRs</small></div>
-        <div class="github-kpi"><span>Alinhamento ponderado</span><strong id="github-alignment">—</strong><small>peso técnico do manual identificado</small></div>
+        <div class="github-kpi"><span>Atividades com PR</span><strong id="github-coverage">—</strong><small>das 54, citadas por ID em alguma PR</small></div>
+        <div class="github-kpi"><span>PRs sem ID válido</span><strong id="github-alignment">—</strong><small>não entram em nenhuma atividade</small></div>
         <div class="github-kpi"><span>PRs mesclados</span><strong id="github-merged-prs">—</strong><small>taxa de merge entre PRs fechados</small></div>
         <div class="github-kpi"><span>CI aprovado</span><strong id="github-ci">—</strong><small>execuções concluídas com sucesso</small></div>
       </div>
+      <h3>PRs por atividade</h3>
+      <div class="github-table-wrap"><table class="github-table"><thead><tr><th>Atividade</th><th>PRs que citam o ID</th><th>Homologação</th></tr></thead><tbody id="github-activity-body"><tr><td colspan="3">Nenhum repositório consultado.</td></tr></tbody></table></div>
+      <h3>PRs a corrigir</h3>
+      <p class="github-status">PRs sem ID de atividade, ou com ID que não existe no Anexo III. Corrija o título ou a descrição da PR para que ela conte.</p>
+      <div class="github-table-wrap"><table class="github-table"><thead><tr><th>PR</th><th>Título</th><th>Motivo</th></tr></thead><tbody id="github-unlinked-body"><tr><td colspan="3">Nenhum repositório consultado.</td></tr></tbody></table></div>
+      <h3>Sinal auxiliar: palavras-chave do manual</h3>
+      <p class="github-status">Busca por termos técnicos em commits e PRs. Só orienta a revisão; não vincula PR a atividade.</p>
       <div class="github-table-wrap"><table class="github-table"><thead><tr><th>Módulo do manual</th><th>Milestone</th><th>Peso técnico</th><th>Evidência GitHub</th><th>Status de acompanhamento</th></tr></thead><tbody id="github-module-body"><tr><td colspan="5">Nenhum repositório consultado.</td></tr></tbody></table></div>
     </div>
   </section>
@@ -1028,6 +1037,26 @@ flowchart TD
       { id:'mobile', label:'React Native e publicação mobile', milestone:'M6', weight:8, keys:['react native','mobile','expo','android','ios','store','app'] },
       { id:'partners', label:'Portais e acesso de parceiros', milestone:'M7', weight:15, keys:['partner','portal','trading','broker','ocp','designer','processaccessgrant','moderation','moderacao','chat'] }
     ];
+    // Vínculo oficial PR → atividade: IDs M1-01…M7-08 no título ou na descrição.
+    let githubLinks = null;
+    let lastPrLinks = null;
+    const activityIdsInText = (text) => [...new Set([...String(text || '').matchAll(/\bM(\d)-(\d{2})\b/gi)].map((m) => `M${m[1]}-${m[2]}`))];
+    const prState = (pr) => (pr.merged_at ? 'mesclada' : pr.state === 'open' ? 'aberta' : 'fechada');
+    const prBadge = (pr) => `<a class="pr-badge pr-${pr.state}" href="${escapeHtml(pr.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(pr.title)}">#${pr.number} ${pr.state}</a>`;
+    const renderPrLinks = () => {
+      if (!lastPrLinks) return;
+      const linked = activityRows.filter((row) => githubLinks[row.label]);
+      document.getElementById('github-activity-body').innerHTML = linked.map((row) => `<tr><td>${escapeHtml(activityDisplay(row))}</td><td>${githubLinks[row.label].map(prBadge).join('')}</td><td>${completedActivities.has(row.label) ? '<span class="evidence-ok">Homologada</span>' : '<span class="evidence-pending">Pendente</span>'}</td></tr>`).join('')
+        || '<tr><td colspan="3">Nenhuma PR cita um ID de atividade.</td></tr>';
+      const toFix = lastPrLinks.filter((pr) => !pr.ids.length || pr.invalid.length);
+      document.getElementById('github-unlinked-body').innerHTML = toFix.map((pr) => `<tr><td>${prBadge(pr)}</td><td>${escapeHtml(pr.title)}</td><td>${pr.invalid.length ? `ID inexistente: ${escapeHtml(pr.invalid.join(', '))}` : 'Sem ID no título ou na descrição'}</td></tr>`).join('')
+        || '<tr><td colspan="3">Todas as PRs citam atividades válidas.</td></tr>';
+    };
+    const prLinksText = (id) => {
+      if (!githubLinks) return 'Atualize o monitor GitHub na aba Dashboard para ver.';
+      const list = githubLinks[id] || [];
+      return list.length ? list.map((pr) => `#${pr.number} (${pr.state})`).join(', ') : 'Nenhuma PR cita este ID.';
+    };
     const githubText = (item) => `${item.title || ''} ${item.body || ''} ${item.commit || ''} ${item.message || ''} ${item.path || ''}`.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const moduleMatches = (text) => manualModules.filter((module) => module.keys.some((key) => text.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g,''))));
     const githubFetch = async (path, token) => {
@@ -1063,24 +1092,28 @@ flowchart TD
         const prs = prsResult.status === 'fulfilled' ? prsResult.value : [];
         const commits = commitsResult.status === 'fulfilled' ? commitsResult.value : [];
         const runs = runsResult.status === 'fulfilled' ? (runsResult.value.workflow_runs || []) : [];
+        lastPrLinks = prs.map((pr) => {
+          const found = activityIdsInText(`${pr.title || ''}\n${pr.body || ''}`);
+          return { number: pr.number, title: pr.title || '', url: pr.html_url || `https://github.com/${repo}/pull/${pr.number}`, state: prState(pr), ids: found.filter((id) => activityIds.has(id)), invalid: found.filter((id) => !activityIds.has(id)) };
+        });
+        githubLinks = {};
+        lastPrLinks.forEach((pr) => pr.ids.forEach((id) => { (githubLinks[id] = githubLinks[id] || []).push(pr); }));
+        renderPrLinks();
         const evidence = Object.fromEntries(manualModules.map((module) => [module.id, 0]));
         [...prs.map((pr) => ({ title:pr.title, body:pr.body, path:pr.head?.ref })), ...commits.map((commit) => ({ message:commit.commit?.message, body:commit.commit?.body }))].forEach((item) => moduleMatches(githubText(item)).forEach((module) => evidence[module.id]++));
-        const matched = manualModules.filter((module) => evidence[module.id] > 0);
-        const coverage = manualModules.length ? (matched.length / manualModules.length) * 100 : 0;
-        const alignment = manualModules.reduce((sum, module) => sum + (evidence[module.id] ? module.weight : 0), 0);
         const closedPrs = prs.filter((pr) => pr.state === 'closed');
         const mergedPrs = prs.filter((pr) => pr.merged_at);
         const mergeRate = closedPrs.length ? (mergedPrs.length / closedPrs.length) * 100 : 0;
         const completedRuns = runs.filter((run) => run.status === 'completed');
         const successfulRuns = completedRuns.filter((run) => run.conclusion === 'success');
         const ciRate = completedRuns.length ? (successfulRuns.length / completedRuns.length) * 100 : null;
-        document.getElementById('github-coverage').textContent = `${coverage.toFixed(0)}%`;
-        document.getElementById('github-alignment').textContent = `${alignment.toFixed(0)}%`;
+        document.getElementById('github-coverage').textContent = `${Object.keys(githubLinks).length}/${activityRows.length}`;
+        document.getElementById('github-alignment').textContent = `${lastPrLinks.filter((pr) => !pr.ids.length).length}/${lastPrLinks.length}`;
         document.getElementById('github-merged-prs').textContent = `${mergedPrs.length}/${closedPrs.length || prs.length} (${mergeRate.toFixed(0)}%)`;
         document.getElementById('github-ci').textContent = ciRate === null ? 'n/d' : `${ciRate.toFixed(0)}%`;
         renderGithubModules(evidence);
         const privateHint = prsResult.status === 'rejected' || commitsResult.status === 'rejected' ? ' Parte dos dados exige token de leitura.' : '';
-        status.textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}: ${commits.length} commits, ${prs.length} PRs e ${runs.length} execuções de CI.${privateHint}`;
+        status.textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}: ${prs.length} PRs (${Object.keys(githubLinks).length} atividades citadas), ${commits.length} commits e ${runs.length} execuções de CI.${privateHint}`;
       } catch (error) {
         document.getElementById('github-coverage').textContent = '—'; document.getElementById('github-alignment').textContent = '—'; document.getElementById('github-merged-prs').textContent = '—'; document.getElementById('github-ci').textContent = '—';
         status.textContent = error.message || 'Falha ao consultar o GitHub.';
@@ -1219,6 +1252,7 @@ flowchart TD
       refreshSwitches();
       renderProgressSummary();
       renderLocalMarksNote();
+      renderPrLinks();
     };
     const checkWeights = () => {
       const local = calculateTotalProgress();
@@ -1541,6 +1575,7 @@ flowchart TD
       completeToggle.textContent = done ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
       completeToggle.title = !currentActivity ? '' : !canMark() ? 'Marcação indisponível: acesso somente leitura ou fonte central fora do ar.' : '';
       if (currentActivity) document.getElementById('activity-homologation').textContent = homologationText(currentActivity.label);
+      document.getElementById('activity-prs').textContent = currentActivity ? prLinksText(currentActivity.label) : '—';
     };
     const openActivityModal = (node) => {
       const title = node.textContent.replace(/\s+/g, ' ').trim();
