@@ -62,6 +62,7 @@
     .progress-save-btn:hover { background: #dff6e9; }
     .progress-save-status { display: block; margin-top: 5px; color: var(--muted); font-size: .7rem; text-align: center; }
     .act-id { display: inline-block; min-width: 3.9em; margin-right: 4px; padding: 1px 6px; border-radius: 5px; background: #e7f3ff; color: var(--navy); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78em; font-weight: 800; text-align: center; white-space: nowrap; }
+    .act-anexo { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; }
     .act-meta { display: block; margin-top: 4px; color: var(--muted); font-size: .68rem; line-height: 1.25; }
     .activity-switch input:disabled + .activity-slider { cursor: not-allowed; opacity: .55; }
     .activity-switch { position: relative; display: inline-block; width: 44px; height: 24px; vertical-align: middle; }
@@ -402,13 +403,13 @@
           <div class="step"><span class="number">5</span><div><strong>Coleta paralela:</strong> PI EAC, logística, seguro, aduana, Trade Brasil, anuências e design.</div></div>
           <div class="step"><span class="number">6</span><div><strong>Relatório:</strong> Nexus consolida itens tipados, total, moeda, score e validade.</div></div>
           <div class="step"><span class="number">7</span><div><strong>Aprovação:</strong> cliente aprova o relatório oficial.</div></div>
-          <div class="step"><span class="number">8</span><div><strong>QC:</strong> Intmart inspeciona a fábrica; reprovação retorna para fornecedor/ajuste.</div></div>
-          <div class="step"><span class="number">9</span><div><strong>1ª parcela:</strong> pagamento libera produção.</div></div>
-          <div class="step"><span class="number">10</span><div><strong>Produção:</strong> fabricação e acompanhamento.</div></div>
-          <div class="step"><span class="number">11</span><div><strong>Amostras:</strong> despacho, recebimento e aprovação.</div></div>
-          <div class="step"><span class="number">12</span><div><strong>Embarque + 2ª parcela:</strong> BL/AWB, Shipgo e habilitação do embarque.</div></div>
+          <div class="step"><span class="number">8</span><div><strong>Parcela 1:</strong> trading fecha o câmbio do sinal; PIX de 30% do FOB + 1,5% CMH no Asaas libera a produção.</div></div>
+          <div class="step"><span class="number">9</span><div><strong>Produção:</strong> fornecedor produz.</div></div>
+          <div class="step"><span class="number">10</span><div><strong>Inspeção de qualidade:</strong> Intmart inspeciona depois da produção; reprovação volta para ajuste.</div></div>
+          <div class="step"><span class="number">11</span><div><strong>Amostra física:</strong> enviada por courier antes do embarque; a aprovação do cliente libera o câmbio do saldo (diagrama 16).</div></div>
+          <div class="step"><span class="number">12</span><div><strong>Parcela 2 e embarque:</strong> PIX de 70% do FOB + 3,5% CMH; embarque só com seguro de carga; BL/AWB e rastreamento ShipsGo.</div></div>
           <div class="step"><span class="number">13</span><div><strong>Chegada:</strong> parcela final, DUIMP, desembaraço, nacionalização e entrega.</div></div>
-          <h3>PI/PL Maker e documentos</h3><ul><li>PI com EAC FOB, frete, seguro, CIF, incoterm, NCM, cronograma de pagamento e dados fiscais.</li><li>PL com volumes, peso, dimensões, CBM e conteúdo por caixa.</li><li>Banco documental versionado: viability, PI, PL, cert, BL/AWB, PLI, DI e desembaraço.</li><li>Portal Único: CMH prepara catálogo e rascunho; despachante credenciado confere e transmite DUIMP.</li><li>Rastreamento ShipsGo/Shipgo: estados booked, departed, in_transit, transshipment, arrived, discharged e delivered.</li></ul>
+          <h3>PI/PL Maker e documentos</h3><ul><li>PI do fornecedor por padrão; PI EAC opcional, com EAC FOB pela margem por divisor, frete, seguro, CIF, incoterm, NCM e cronograma de pagamento (diagrama 15).</li><li>PL com volumes, peso, dimensões, CBM e conteúdo por caixa.</li><li>Banco documental versionado: viability, PI, PL, cert, BL/AWB, PLI, DI e desembaraço.</li><li>Portal Único: CMH prepara catálogo e rascunho; despachante credenciado confere e transmite DUIMP.</li><li>Rastreamento ShipsGo/Shipgo: estados booked, departed, in_transit, transshipment, arrived, discharged e delivered.</li></ul>
           <h3>Critérios de aceite</h3><ul><li>Checkout bloqueia operação sem seguro e sem aceite do estudo oficial.</li><li>Produção, embarque e desembaraço são liberados somente pelos marcos financeiros e operacionais corretos.</li><li>Rastreamento não duplica eventos e encerra a cobrança quando entregue.</li><li>PI/PL e documentos ficam fixados ao processo ativo com RBAC.</li></ul>
         </section>
 
@@ -485,7 +486,7 @@
         <div class="diagram-wrap">
           <div class="mermaid">
 flowchart TD
-  START([Início do programa]) --> M1["M1 — Milestone 1: Fundação e Segurança"]
+  a_M1_01_ini([Início do programa]) --> M1["M1 — Milestone 1: Fundação e Segurança"]
   M1 --> M2["M2 — Milestone 2: Engine de Catálogo e DDP"]
   M1 --> M3["M3 — Milestone 3: Agentes IA e Omnichannel"]
   M1 --> M4["M4 — Milestone 4: FinTech e Gateway SaaS"]
@@ -497,82 +498,105 @@ flowchart TD
   M5 --> M6["M6 — Milestone 6: React Native e Publicação nas Lojas"]
   M7 --> M6
 
-  M1 --> C0["0 Cadastro: empresa, RADAR/Trade, plano e LGPD"]
-  C0 --> PAY0{"Assinatura confirmada?"}
-  PAY0 -- Não --> HOLD0["Bloqueia novos estudos; mantém histórico"]
-  PAY0 -- Sim --> A1["1 Produto: catálogo Intmart ou upload"]
-  A1 --> D1["Dragon: sourcing individual ou lote"]
-  D1 --> A2["2 Atlas: NCM, anuências, antidumping e restrições"]
-  A2 --> A3["3 Cliente seleciona itens"]
-  A3 --> A4["4 Simulação DDP preliminar"]
-  A4 --> N0["Nexus grava resultado sem aprovação formal"]
-  N0 --> DEC1{"Cliente segue para viabilidade oficial?"}
-  DEC1 -- Não --> END0([Processo encerrado sem compra])
-  DEC1 -- Sim --> B1["5 Coleta paralela de custos"]
+  M1 --> a_M4_01_cad["0 · Cadastro: empresa, RADAR ou trading, plano e aceite LGPD"]
+  a_M4_01_cad --> a_M4_01_pay{"Assinatura paga no Asaas (Conecta HUB)?"}
+  a_M4_01_pay -- Não --> a_M4_01_blk["Bloqueia novos estudos; mantém histórico"]
+  a_M4_01_pay -- Sim --> a_M2_01_prod["Produto: catálogo Intmart ou upload"]
 
-  B1 --> EAC["EAC: PI/PL e margem por divisor"]
-  B1 --> HERMES["Hermes: frete, rotas, CBM e seguro obrigatório"]
-  B1 --> ATLAS["Atlas/despachante: tributos, NCM confirmado e taxas"]
-  B1 --> TRADE["Trade Brasil: taxa e importador de registro, se necessário"]
-  B1 --> CERT["Certificadora/laboratório, se aplicável"]
-  B1 --> DESIGN["Design/marca própria, se aplicável"]
-  EAC --> B2["6 Nexus consolida Relatório de Viabilidade"]
-  HERMES --> B2
-  ATLAS --> B2
-  TRADE --> B2
-  CERT --> B2
-  DESIGN --> B2
-  B2 --> DEC2{"Cliente aprova o relatório?"}
-  DEC2 -- Não --> ADJ["Ajuste de produto, fornecedor ou custos"]
-  ADJ --> B1
-  DEC2 -- Sim --> QC["8 Intmart realiza inspeção QC"]
-  QC --> DEC3{"QC aprovada?"}
-  DEC3 -- Não --> ADJ2["Novo fornecedor ou ajuste de produção"]
-  ADJ2 --> D1
-  DEC3 -- Sim --> P1["9 1ª parcela via Asaas: mercadoria + despesas"]
-  P1 --> W1{"Webhook confirmado e split válido?"}
-  W1 -- Não --> BLOCK1["Produção bloqueada; retry/ação manual"]
-  W1 -- Sim --> PROD["10 Fornecedor produz"]
-  PROD --> SAMPLE["11 Amostras: envio e aprovação"]
-  SAMPLE --> EMB["12 Produção concluída e embarque"]
-  EMB --> P2["2ª parcela via Asaas: saldo da mercadoria"]
-  P2 --> W2{"Pagamento confirmado?"}
-  W2 -- Não --> BLOCK2["Embarque bloqueado"]
-  W2 -- Sim --> TRACK["BL/AWB registrado no Shipgo/ShipsGo"]
-  TRACK --> EVENTS["Eventos, ETA, alertas e tracking no painel"]
-  EVENTS --> ARRIVE["13 Chegada no Brasil"]
-  ARRIVE --> P3["Parcela final via Asaas: impostos e despesas"]
-  P3 --> DUIMP["CMH prepara catálogo e rascunho DUIMP"]
-  DUIMP --> BROKER["Despachante confere e transmite no Portal Único"]
-  BROKER --> CHANNEL{"Canal aduaneiro?"}
-  CHANNEL -- Verde --> RELEASE["Carga liberada"]
-  CHANNEL -- Amarelo/Vermelho/Cinza --> EXIG["Exigência, documentos ou vistoria"]
-  EXIG --> BROKER
-  RELEASE --> DELIVERY["Nacionalização, entrega e encerramento"]
-  DELIVERY --> DOCS["Banco documental: PI, PL, certificados, BL/AWB, DI e desembaraço"]
-  DOCS --> END1([Processo concluído])
+  subgraph F1["1 · Simulação agêntica DDP · sem aprovações"]
+    a_M2_01_prod --> a_M2_02_dragon["Dragon: fornecedor e preço FOB, individual ou lote"]
+    a_M2_03_accio["Accio Work no Dragon"] -.-> a_M2_02_dragon
+    a_M2_02_dragon --> a_M2_04_atlas["Atlas: NCM proposto, tributos, anuências e regras ZFM"]
+    a_M2_07_tab["Tabelas fiscais e de frete versionadas"] -.-> a_M2_04_atlas
+    a_M2_04_atlas --> a_M2_05_sel["Cliente seleciona os itens"]
+    a_M2_05_sel --> a_M2_06_ddp["Hermes: frete e seguro; custo total DDP estimado"]
+    a_M2_06_ddp --> a_M2_06_res["Resultado entregue: total em R$, câmbio, data e validade"]
+  end
 
-  NEXUS["Nexus: orquestra tarefas e estados"] -.-> D1
-  NEXUS -.-> A2
-  NEXUS -.-> HERMES
-  NEXUS -.-> B2
-  M7 -.-> TRADE
-  M7 -.-> BROKER
-  M7 -.-> HERMES
-  M7 -.-> CERT
-  M7 -.-> DESIGN
-  M4 -.-> P1
-  M4 -.-> P2
-  M4 -.-> P3
+  subgraph F2["2 · Decisão do cliente e estudo de viabilidade oficial"]
+    a_M2_06_res --> a_M2_06_dec{"Seguir com o estudo de viabilidade oficial?"}
+    a_M2_06_dec -- Não --> a_M2_06_end([Encerrado sem compra])
+    a_M2_06_dec -- Sim --> a_M5_01_coleta["Estudo de viabilidade oficial: coleta paralela de custos"]
+    a_M5_01_coleta --> a_M5_02_pipl["PI e PL: PI do fornecedor (padrão) ou PI EAC opcional"]
+    a_M5_01_coleta --> a_M5_03_hermes["Hermes: frete firme, rotas, CBM e seguro obrigatório"]
+    a_M5_01_coleta --> a_M5_04_atlas["Atlas e despachante: NCM confirmado, tributos e taxas"]
+    a_M5_01_coleta --> a_M5_05_trading["Trading: taxa e importador de registro, se necessário"]
+    a_M5_01_coleta --> a_M5_06_cert["Certificadora/laboratório, se aplicável"]
+    a_M5_01_coleta --> a_M5_07_design["Design/marca própria, se aplicável"]
+    a_M5_02_pipl --> a_M5_08_nexus["Nexus consolida o estudo de viabilidade"]
+    a_M5_03_hermes --> a_M5_08_nexus
+    a_M5_04_atlas --> a_M5_08_nexus
+    a_M5_05_trading --> a_M5_08_nexus
+    a_M5_06_cert --> a_M5_08_nexus
+    a_M5_07_design --> a_M5_08_nexus
+    a_M5_08_nexus --> a_M5_09_dec{"Cliente aprova o estudo?"}
+    a_M5_09_dec -- Não --> a_M5_01_ajuste["Ajuste de produto, fornecedor ou custos; nova versão da PI"]
+    a_M5_01_ajuste --> a_M5_01_coleta
+    a_M5_09_dec -- Sim --> a_M5_09_aberto["Processo de importação aberto"]
+  end
+
+  subgraph F3["3 · Comprar e fabricar"]
+    a_M5_09_aberto --> a_M5_06_exige{"Exige certificado?"}
+    a_M5_06_exige -- Sim --> a_M5_06_ccp["Certificadora avalia; CCP com validade"]
+    a_M5_06_exige -- Não --> a_M4_02_cambio["Trading fecha o câmbio do sinal e informa taxa e valor em reais"]
+    a_M5_06_ccp --> a_M4_02_cambio
+    a_M4_02_cambio --> a_M4_02_p1["Parcela 1 · PIX no Asaas: 30% do FOB + 1,5% CMH"]
+    a_M4_02_p1 --> a_M4_03_ok{"Webhook confirmado e split válido?"}
+    a_M4_03_ok -- Não --> a_M4_03_blk["Produção bloqueada; retry ou ação manual"]
+    a_M4_03_ok -- Sim --> a_M4_03_paga["Trading liquida o câmbio e paga 30% ao fornecedor"]
+    a_M4_03_paga --> a_M5_11_prod["Fornecedor produz"]
+    a_M5_11_prod --> a_M5_10_qc{"Inspeção de qualidade ok? (Intmart)"}
+    a_M5_10_qc -- Não --> a_M5_10_ajuste["Ajuste da produção"]
+    a_M5_10_ajuste --> a_M5_11_prod
+    a_M5_10_qc -- Sim --> a_M5_12_amostra{"Amostra física aprovada pelo cliente?"}
+    a_M5_12_amostra -- Não --> a_M5_12_nova["Ajuste e nova amostra; na 2ª reprovação, escala para a gestão CMH"]
+    a_M5_12_nova --> a_M5_12_amostra
+    a_M5_12_amostra -- Sim --> a_M4_04_cambio["Trading fecha o câmbio do saldo e informa taxa e valor em reais"]
+    a_M4_04_cambio --> a_M4_04_p2["Parcela 2 · PIX no Asaas: 70% do FOB + 3,5% CMH"]
+    a_M4_04_p2 --> a_M4_05_ok{"Pagamento confirmado e split válido?"}
+    a_M4_05_ok -- Não --> a_M4_05_blk["Embarque bloqueado"]
+    a_M4_05_ok -- Sim --> a_M4_05_paga["Trading liquida o câmbio e paga 70% ao fornecedor"]
+  end
+
+  subgraph F4["4 · Transportar"]
+    a_M4_05_paga --> a_M5_13_seguro{"Seguro de carga incluído?"}
+    a_M5_13_seguro -- Não --> a_M5_13_blk["Embarque bloqueado"]
+    a_M5_13_seguro -- Sim --> a_M5_13_emb["Embarque: BL ou AWB emitido"]
+    a_M5_13_emb --> a_M5_14_track["Rastreamento ShipsGo: eventos, ETA e alertas"]
+    a_M5_14_track --> a_M5_15_cheg["Chegada no Brasil"]
+    a_M5_15_cheg --> a_M4_06_pf["Parcela final no Asaas: impostos e despesas"]
+  end
+
+  subgraph F5["5 · Nacionalizar"]
+    a_M4_06_pf --> a_M5_16_duimp["Plataforma prepara catálogo e rascunho da DUIMP"]
+    a_M5_16_duimp --> a_M5_16_desp["Despachante confere e transmite no Portal Único"]
+    a_M5_16_desp --> a_M5_17_canal{"Canal da Receita?"}
+    a_M5_17_canal -- Verde --> a_M5_17_lib["Carga liberada"]
+    a_M5_17_canal -- "Amarelo, vermelho ou cinza" --> a_M5_17_exig["Exigência ou conferência: documentos e vistoria"]
+    a_M5_17_exig --> a_M5_17_lib
+    a_M5_17_lib --> a_M5_18_ent["Entrega e banco documental: PI, PL, certificados, BL/AWB e DUIMP"]
+    a_M5_18_ent --> a_M5_18_fim([Processo concluído])
+  end
+
+  M3 --> PLAT
+  subgraph PLAT["Plataforma e agentes (M3)"]
+    direction LR
+    a_M3_01_nexus["Nexus: orquestra Dragon, Atlas e Hermes; tarefas e estados"]
+    a_M3_02_chat["Chat na plataforma; WhatsApp e e-mail só notificam com link"]
+    a_M3_03_hooks["Webhooks Asaas e ShipsGo com fila e retentativas"]
+    a_M3_04_mem["Memória opaca (CMH-CLI-001) e auditoria dos agentes"]
+  end
 
   classDef milestone fill:#102a43,color:#fff,stroke:#102a43,stroke-width:2px;
   classDef agent fill:#f0ebff,color:#3b2778,stroke:#6d4acb;
   classDef block fill:#fff1f0,color:#8c211b,stroke:#c2413b;
   classDef decision fill:#fff8eb,color:#7a4b00,stroke:#d97706;
+  classDef payment fill:#e7f8ef,color:#0b5d3b,stroke:#168a5b;
   class M1,M2,M3,M4,M5,M6,M7 milestone;
-  class NEXUS,D1,A2,HERMES,EAC agent;
-  class HOLD0,BLOCK1,BLOCK2 block;
-  class PAY0,DEC1,DEC2,DEC3,W1,W2,CHANNEL decision;
+  class a_M3_01_nexus,a_M2_02_dragon,a_M2_04_atlas,a_M2_06_ddp,a_M5_03_hermes,a_M5_04_atlas,a_M5_08_nexus agent;
+  class a_M4_01_blk,a_M4_03_blk,a_M4_05_blk,a_M5_13_blk block;
+  class a_M4_01_pay,a_M2_06_dec,a_M5_09_dec,a_M5_06_exige,a_M4_03_ok,a_M5_10_qc,a_M5_12_amostra,a_M4_05_ok,a_M5_13_seguro,a_M5_17_canal decision;
+  class a_M4_02_p1,a_M4_04_p2,a_M4_06_pf payment;
           </div>
         </div>
         <p class="footer">Roadmap consolidado a partir das especificações de contrato, fluxo de desenvolvimento, manual de diagramas e milestones adicionais fornecidos para o Conecta Market.</p>
@@ -705,7 +729,7 @@ flowchart TD
           </tbody>
         </table>
         <h3>Atividades do Anexo III e contribuição no contrato</h3>
-        <p>Esta matriz reproduz as <strong>54 atividades do Anexo III</strong>, uma por linha, com o ID usado nas PRs (M1-01 a M7-08). A coluna <strong>% do projeto</strong> mostra quanto a atividade representa no contrato completo; a coluna <strong>% do milestone</strong> mostra sua participação dentro do milestone correspondente. As linhas somam 100% do projeto e 100% dentro de cada milestone. Os quadros do fluxograma abrem a atividade correspondente.</p>
+        <p>Esta matriz reproduz as <strong>54 atividades do Anexo III</strong>, uma por linha, com o ID usado nas PRs (M1-01 a M7-08). Os títulos seguem o Manual do Dev v2.1; quando diferem, o nome do Anexo III aparece logo abaixo. A coluna <strong>% do projeto</strong> mostra quanto a atividade representa no contrato completo; a coluna <strong>% do milestone</strong> mostra sua participação dentro do milestone correspondente. As linhas somam 100% do projeto e 100% dentro de cada milestone. Os quadros do fluxograma abrem a atividade correspondente.</p>
         <div id="migration-note" class="callout warning" hidden></div>
         <table id="fluxo-peso-table">
           <thead>
@@ -725,41 +749,41 @@ flowchart TD
             <tr data-id="M1-04"><td><span class="act-id">M1-04</span> <span class="act-name">Proteção de IA, segredos e observabilidade</span></td><td>M1</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Referência opaca nas delegações aos agentes, segredos fora do código, logs, métricas e alertas.</td></tr>
             <tr data-id="M1-05"><td><span class="act-id">M1-05</span> <span class="act-name">Design System e componentes reutilizáveis</span></td><td>M1</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Tokens, componentes e padrões de tela compartilhados entre web e mobile.</td></tr>
             <tr data-id="M1-06"><td><span class="act-id">M1-06</span> <span class="act-name">Infraestrutura VPS: backup, monitoramento, roteiro e homologação</span></td><td>M1</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Backup fora do VPS com restauração testada, monitoramento, TLS, roteiro de deploy e homologação separada.</td></tr>
-            <tr data-id="M2-01"><td><span class="act-id">M2-01</span> <span class="act-name">1 Produto: catálogo INTMART ou upload</span></td><td>M2</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Entrada dos produtos por catálogo Intmart ou formatos multimodais.</td></tr>
+            <tr data-id="M2-01"><td><span class="act-id">M2-01</span> <span class="act-name">Produto: catálogo Intmart ou upload</span><small class="act-anexo">Anexo III: 1 Produto: catálogo INTMART ou upload</small></td><td>M2</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Entrada dos produtos por catálogo Intmart ou formatos multimodais.</td></tr>
             <tr data-id="M2-02"><td><span class="act-id">M2-02</span> <span class="act-name">Dragon: sourcing individual ou lote</span></td><td>M2</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Pesquisa de fornecedores, alternativas e preço FOB.</td></tr>
             <tr data-id="M2-03"><td><span class="act-id">M2-03</span> <span class="act-name">Integração Accio Work no Dragon</span></td><td>M2</td><td><strong>1%</strong></td><td><strong>6,67%</strong></td><td>Busca de fornecedores pelo Accio Work dentro do fluxo do Dragon.</td></tr>
-            <tr data-id="M2-04"><td><span class="act-id">M2-04</span> <span class="act-name">Atlas: NCM e restrições</span></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Classificação NCM preliminar com fonte e data, tributos, anuências, antidumping e regras ZFM.</td></tr>
-            <tr data-id="M2-05"><td><span class="act-id">M2-05</span> <span class="act-name">3 Seleção de itens</span></td><td>M2</td><td><strong>1%</strong></td><td><strong>6,67%</strong></td><td>Seleção individual ou em lote para a simulação.</td></tr>
-            <tr data-id="M2-06"><td><span class="act-id">M2-06</span> <span class="act-name">4 Simulação DDP preliminar</span></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Estimativa de custo total com FOB, frete, seguro, tributos e taxas.</td></tr>
+            <tr data-id="M2-04"><td><span class="act-id">M2-04</span> <span class="act-name">Atlas: NCM proposto, tributos, anuências e regras ZFM</span><small class="act-anexo">Anexo III: Atlas: NCM e restrições</small></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Classificação NCM preliminar com fonte e data, tributos, anuências, antidumping e regras ZFM.</td></tr>
+            <tr data-id="M2-05"><td><span class="act-id">M2-05</span> <span class="act-name">Seleção de itens, individual ou em lote</span><small class="act-anexo">Anexo III: 3 Seleção de itens</small></td><td>M2</td><td><strong>1%</strong></td><td><strong>6,67%</strong></td><td>Seleção individual ou em lote para a simulação.</td></tr>
+            <tr data-id="M2-06"><td><span class="act-id">M2-06</span> <span class="act-name">Simulação agêntica DDP, sem aprovações</span><small class="act-anexo">Anexo III: 4 Simulação DDP preliminar</small></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Estimativa de custo total com FOB, frete, seguro, tributos e taxas.</td></tr>
             <tr data-id="M2-07"><td><span class="act-id">M2-07</span> <span class="act-name">Tabelas fiscais/frete versionadas com carga inicial</span></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>TEC, TIPI, ICMS por UF, regras ZFM e premissas de frete versionadas, com carga inicial.</td></tr>
             <tr data-id="M3-01"><td><span class="act-id">M3-01</span> <span class="act-name">Nexus: orquestra tarefas e estados</span></td><td>M3</td><td><strong>5%</strong></td><td><strong>33,33%</strong></td><td>Delegação aos agentes Dragon, Atlas e Hermes, persistência por processo, fan-out/gather, retries e consolidação.</td></tr>
-            <tr data-id="M3-02"><td><span class="act-id">M3-02</span> <span class="act-name">JourneyChat + WhatsApp/e-mail com link</span></td><td>M3</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Conversa dentro da plataforma; WhatsApp e e-mail apenas notificam com link, sem receber mensagens do cliente.</td></tr>
-            <tr data-id="M3-03"><td><span class="act-id">M3-03</span> <span class="act-name">Notificações, webhooks e fila</span></td><td>M3</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Eventos Asaas e ShipsGo com idempotência, fila e retentativas, e notificações ao usuário.</td></tr>
-            <tr data-id="M3-04"><td><span class="act-id">M3-04</span> <span class="act-name">Memória opaca e auditoria de agentes</span></td><td>M3</td><td><strong>4%</strong></td><td><strong>26,67%</strong></td><td>Histórico dos agentes sem dados identificáveis (referência opaca) e trilha de auditoria das decisões.</td></tr>
-            <tr data-id="M4-01"><td><span class="act-id">M4-01</span> <span class="act-name">0 Cadastro e assinatura via Asaas</span></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Plano, qualificação RADAR/trading, assinatura na conta Asaas Conecta HUB e liberação de acesso.</td></tr>
-            <tr data-id="M4-02"><td><span class="act-id">M4-02</span> <span class="act-name">1ª parcela Asaas + câmbio da trading</span></td><td>M4</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Trading fecha o câmbio antes da cobrança; PIX de 30% do FOB + 1,5% CMH (+ 1,5% da trading, se parceira), antes da produção.</td></tr>
-            <tr data-id="M4-03"><td><span class="act-id">M4-03</span> <span class="act-name">Webhook, split e liberação da produção</span></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Webhook idempotente, split na conta Conecta Agência (CMH retém 1,5% do FOB), conciliação e liberação da produção.</td></tr>
-            <tr data-id="M4-04"><td><span class="act-id">M4-04</span> <span class="act-name">2ª parcela Asaas + câmbio do saldo</span></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Trading fecha o câmbio do saldo; PIX de 70% do FOB + 3,5% CMH (+ 3,5% da trading, se parceira), após a produção.</td></tr>
-            <tr data-id="M4-05"><td><span class="act-id">M4-05</span> <span class="act-name">Webhook, split e liberação do embarque</span></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Webhook idempotente, split (CMH retém 3,5% do FOB), repasses e habilitação do embarque.</td></tr>
-            <tr data-id="M4-06"><td><span class="act-id">M4-06</span> <span class="act-name">Parcela final Asaas e reconciliação</span></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Parcela final na chegada (impostos e despesas) e reconciliação de cada parcela até o estado liquidada.</td></tr>
-            <tr data-id="M4-07"><td><span class="act-id">M4-07</span> <span class="act-name">Remuneração por trading e restrição da trading própria ao CNPJ</span></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Remuneração de 5% do FOB à trading parceira, fora da base de tributos, e restrição da trading própria ao CNPJ.</td></tr>
-            <tr data-id="M5-01"><td><span class="act-id">M5-01</span> <span class="act-name">5 Coleta paralela de custos</span></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Disparo coordenado da viabilidade oficial e coleta fan-out/gather.</td></tr>
-            <tr data-id="M5-02"><td><span class="act-id">M5-02</span> <span class="act-name">EAC: PI/PL e margem por divisor</span></td><td>M5</td><td><strong>0,8%</strong></td><td><strong>4%</strong></td><td>Proforma, Packing List, CIF e margem EAC sem exposição da composição interna.</td></tr>
-            <tr data-id="M5-03"><td><span class="act-id">M5-03</span> <span class="act-name">Hermes: frete, rotas e seguro</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Frete, CBM, prazo, seguro obrigatório e base logística do CIF.</td></tr>
-            <tr data-id="M5-04"><td><span class="act-id">M5-04</span> <span class="act-name">Atlas/despachante: tributos e taxas</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Impostos por NCM, despesas aduaneiras e retorno fiscal.</td></tr>
+            <tr data-id="M3-02"><td><span class="act-id">M3-02</span> <span class="act-name">Chat na plataforma; WhatsApp e e-mail só notificam com link</span><small class="act-anexo">Anexo III: JourneyChat + WhatsApp/e-mail com link</small></td><td>M3</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Conversa dentro da plataforma; WhatsApp e e-mail apenas notificam com link, sem receber mensagens do cliente.</td></tr>
+            <tr data-id="M3-03"><td><span class="act-id">M3-03</span> <span class="act-name">Notificações, webhooks Asaas e ShipsGo e fila</span><small class="act-anexo">Anexo III: Notificações, webhooks e fila</small></td><td>M3</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Eventos Asaas e ShipsGo com idempotência, fila e retentativas, e notificações ao usuário.</td></tr>
+            <tr data-id="M3-04"><td><span class="act-id">M3-04</span> <span class="act-name">Memória opaca (CMH-CLI-001) e auditoria dos agentes</span><small class="act-anexo">Anexo III: Memória opaca e auditoria de agentes</small></td><td>M3</td><td><strong>4%</strong></td><td><strong>26,67%</strong></td><td>Histórico dos agentes sem dados identificáveis (referência opaca) e trilha de auditoria das decisões.</td></tr>
+            <tr data-id="M4-01"><td><span class="act-id">M4-01</span> <span class="act-name">Cadastro e assinatura do plano no Asaas (Conecta HUB)</span><small class="act-anexo">Anexo III: 0 Cadastro e assinatura via Asaas</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Plano, qualificação RADAR/trading, assinatura na conta Asaas Conecta HUB e liberação de acesso.</td></tr>
+            <tr data-id="M4-02"><td><span class="act-id">M4-02</span> <span class="act-name">Parcela 1: câmbio do sinal pela trading e PIX de 30% do FOB</span><small class="act-anexo">Anexo III: 1ª parcela Asaas + câmbio da trading</small></td><td>M4</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Trading fecha o câmbio antes da cobrança; PIX de 30% do FOB + 1,5% CMH (+ 1,5% da trading, se parceira), antes da produção.</td></tr>
+            <tr data-id="M4-03"><td><span class="act-id">M4-03</span> <span class="act-name">Webhook e split da Parcela 1 (CMH retém 1,5%) e liberação da produção</span><small class="act-anexo">Anexo III: Webhook, split e liberação da produção</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Webhook idempotente, split na conta Conecta Agência (CMH retém 1,5% do FOB), conciliação e liberação da produção.</td></tr>
+            <tr data-id="M4-04"><td><span class="act-id">M4-04</span> <span class="act-name">Parcela 2: câmbio do saldo pela trading e PIX de 70% do FOB</span><small class="act-anexo">Anexo III: 2ª parcela Asaas + câmbio do saldo</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Trading fecha o câmbio do saldo; PIX de 70% do FOB + 3,5% CMH (+ 3,5% da trading, se parceira), após a produção.</td></tr>
+            <tr data-id="M4-05"><td><span class="act-id">M4-05</span> <span class="act-name">Webhook e split da Parcela 2 (CMH retém 3,5%) e liberação do embarque</span><small class="act-anexo">Anexo III: Webhook, split e liberação do embarque</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Webhook idempotente, split (CMH retém 3,5% do FOB), repasses e habilitação do embarque.</td></tr>
+            <tr data-id="M4-06"><td><span class="act-id">M4-06</span> <span class="act-name">Parcela final no Asaas e reconciliação</span><small class="act-anexo">Anexo III: Parcela final Asaas e reconciliação</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Parcela final na chegada (impostos e despesas) e reconciliação de cada parcela até o estado liquidada.</td></tr>
+            <tr data-id="M4-07"><td><span class="act-id">M4-07</span> <span class="act-name">Remuneração da trading parceira e restrição da trading própria ao CNPJ</span><small class="act-anexo">Anexo III: Remuneração por trading e restrição da trading própria ao CNPJ</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Remuneração de 5% do FOB à trading parceira, fora da base de tributos, e restrição da trading própria ao CNPJ.</td></tr>
+            <tr data-id="M5-01"><td><span class="act-id">M5-01</span> <span class="act-name">Estudo de viabilidade oficial: coleta paralela de custos</span><small class="act-anexo">Anexo III: 5 Coleta paralela de custos</small></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Disparo coordenado da viabilidade oficial e coleta fan-out/gather.</td></tr>
+            <tr data-id="M5-02"><td><span class="act-id">M5-02</span> <span class="act-name">PI e PL: PI do fornecedor (padrão) ou PI EAC com margem por divisor</span><small class="act-anexo">Anexo III: EAC: PI/PL e margem por divisor</small></td><td>M5</td><td><strong>0,8%</strong></td><td><strong>4%</strong></td><td>PI e PL do fornecedor por padrão; PI EAC opcional, com margem por divisor decidida pela gestão CMH. Margem e comissão nunca aparecem para o cliente (diagrama 15).</td></tr>
+            <tr data-id="M5-03"><td><span class="act-id">M5-03</span> <span class="act-name">Hermes: frete firme, rotas e seguro obrigatório</span><small class="act-anexo">Anexo III: Hermes: frete, rotas e seguro</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Frete, CBM, prazo, seguro obrigatório e base logística do CIF.</td></tr>
+            <tr data-id="M5-04"><td><span class="act-id">M5-04</span> <span class="act-name">Atlas e despachante: NCM confirmado, tributos e taxas</span><small class="act-anexo">Anexo III: Atlas/despachante: tributos e taxas</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Impostos por NCM, despesas aduaneiras e retorno fiscal.</td></tr>
             <tr data-id="M5-05"><td><span class="act-id">M5-05</span> <span class="act-name">Trading: taxa e importador de registro</span></td><td>M5</td><td><strong>0,5%</strong></td><td><strong>2,5%</strong></td><td>Seleção do importador de registro e taxa da operação quando o cliente não possui RADAR.</td></tr>
             <tr data-id="M5-06"><td><span class="act-id">M5-06</span> <span class="act-name">Certificadora/laboratório</span></td><td>M5</td><td><strong>0,4%</strong></td><td><strong>2%</strong></td><td>Anuências, ensaios e certificado/CCP quando exigidos pelo produto.</td></tr>
             <tr data-id="M5-07"><td><span class="act-id">M5-07</span> <span class="act-name">Design/marca própria</span></td><td>M5</td><td><strong>0,3%</strong></td><td><strong>1,5%</strong></td><td>Cotação de produto, embalagem e marca própria quando contratada.</td></tr>
-            <tr data-id="M5-08"><td><span class="act-id">M5-08</span> <span class="act-name">6 Nexus consolida o relatório</span></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Relatório final com itens tipados, total, moeda, score e validade.</td></tr>
-            <tr data-id="M5-09"><td><span class="act-id">M5-09</span> <span class="act-name">Decisão e aprovação do cliente</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Aceite formal que autoriza a inspeção e a continuidade da operação.</td></tr>
-            <tr data-id="M5-10"><td><span class="act-id">M5-10</span> <span class="act-name">8 Inspeção QC e decisão de qualidade</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Visita da Intmart; aprovação libera produção e reprovação retorna para ajuste.</td></tr>
-            <tr data-id="M5-11"><td><span class="act-id">M5-11</span> <span class="act-name">10 Produção</span></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Fabricação liberada, acompanhamento e confirmação de conclusão.</td></tr>
-            <tr data-id="M5-12"><td><span class="act-id">M5-12</span> <span class="act-name">11 Amostras</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Despacho, recebimento e aprovação das amostras.</td></tr>
-            <tr data-id="M5-13"><td><span class="act-id">M5-13</span> <span class="act-name">12 Embarque e BL/AWB</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Embarque condicionado ao pagamento e emissão do documento de transporte.</td></tr>
-            <tr data-id="M5-14"><td><span class="act-id">M5-14</span> <span class="act-name">Tracking e eventos ShipsGo</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>ETA, eventos, alertas, polling/webhook e encerramento quando entregue.</td></tr>
-            <tr data-id="M5-15"><td><span class="act-id">M5-15</span> <span class="act-name">13 Chegada e parcela final</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Liquidação na chegada e início da nacionalização.</td></tr>
-            <tr data-id="M5-16"><td><span class="act-id">M5-16</span> <span class="act-name">DUIMP e conferência do despachante</span></td><td>M5</td><td><strong>1,5%</strong></td><td><strong>7,5%</strong></td><td>Catálogo, rascunho, conferência e transmissão no Portal Único.</td></tr>
-            <tr data-id="M5-17"><td><span class="act-id">M5-17</span> <span class="act-name">Canal, exigência e liberação aduaneira</span></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Tratamento dos canais verde, amarelo, vermelho e cinza.</td></tr>
+            <tr data-id="M5-08"><td><span class="act-id">M5-08</span> <span class="act-name">Nexus consolida o estudo de viabilidade</span><small class="act-anexo">Anexo III: 6 Nexus consolida o relatório</small></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Relatório final com itens tipados, total, moeda, score e validade.</td></tr>
+            <tr data-id="M5-09"><td><span class="act-id">M5-09</span> <span class="act-name">Cliente aprova o estudo de viabilidade</span><small class="act-anexo">Anexo III: Decisão e aprovação do cliente</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Aceite formal que autoriza a inspeção e a continuidade da operação.</td></tr>
+            <tr data-id="M5-10"><td><span class="act-id">M5-10</span> <span class="act-name">Inspeção de qualidade após a produção (Intmart)</span><small class="act-anexo">Anexo III: 8 Inspeção QC e decisão de qualidade</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Visita da Intmart depois da produção; a aprovação libera a amostra e a reprovação volta para ajuste da produção.</td></tr>
+            <tr data-id="M5-11"><td><span class="act-id">M5-11</span> <span class="act-name">Fornecedor produz</span><small class="act-anexo">Anexo III: 10 Produção</small></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Fabricação liberada, acompanhamento e confirmação de conclusão.</td></tr>
+            <tr data-id="M5-12"><td><span class="act-id">M5-12</span> <span class="act-name">Amostra física antes do embarque</span><small class="act-anexo">Anexo III: 11 Amostras</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Amostra do lote enviada por courier; a aprovação do cliente libera o câmbio do saldo e a Parcela 2. Na segunda reprovação, o Nexus escala para a gestão CMH (diagramas 16 e 17).</td></tr>
+            <tr data-id="M5-13"><td><span class="act-id">M5-13</span> <span class="act-name">Embarque com seguro de carga e BL/AWB</span><small class="act-anexo">Anexo III: 12 Embarque e BL/AWB</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Embarque só com seguro de carga e Parcela 2 paga; emissão do BL ou AWB.</td></tr>
+            <tr data-id="M5-14"><td><span class="act-id">M5-14</span> <span class="act-name">Rastreamento ShipsGo: eventos, ETA e alertas</span><small class="act-anexo">Anexo III: Tracking e eventos ShipsGo</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>ETA, eventos, alertas, polling/webhook e encerramento quando entregue.</td></tr>
+            <tr data-id="M5-15"><td><span class="act-id">M5-15</span> <span class="act-name">Chegada no Brasil e parcela final</span><small class="act-anexo">Anexo III: 13 Chegada e parcela final</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Liquidação na chegada e início da nacionalização.</td></tr>
+            <tr data-id="M5-16"><td><span class="act-id">M5-16</span> <span class="act-name">Catálogo e rascunho da DUIMP; despachante confere e transmite</span><small class="act-anexo">Anexo III: DUIMP e conferência do despachante</small></td><td>M5</td><td><strong>1,5%</strong></td><td><strong>7,5%</strong></td><td>Catálogo, rascunho, conferência e transmissão no Portal Único.</td></tr>
+            <tr data-id="M5-17"><td><span class="act-id">M5-17</span> <span class="act-name">Canal da Receita, exigência e liberação</span><small class="act-anexo">Anexo III: Canal, exigência e liberação aduaneira</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Tratamento dos canais verde, amarelo, vermelho e cinza.</td></tr>
             <tr data-id="M5-18"><td><span class="act-id">M5-18</span> <span class="act-name">Entrega e banco documental</span></td><td>M5</td><td><strong>1,5%</strong></td><td><strong>7,5%</strong></td><td>Entrega, encerramento e documentos versionados vinculados ao processo.</td></tr>
             <tr data-id="M6-01"><td><span class="act-id">M6-01</span> <span class="act-name">Mobile: telas críticas e navegação</span></td><td>M6</td><td><strong>3%</strong></td><td><strong>30%</strong></td><td>Login, catálogo, simulação, viabilidade, aprovação e pagamentos/status no app, com navegação nativa.</td></tr>
             <tr data-id="M6-02"><td><span class="act-id">M6-02</span> <span class="act-name">Mobile: documentos, mídia, push e tracking</span></td><td>M6</td><td><strong>3%</strong></td><td><strong>30%</strong></td><td>Upload de documentos e mídia, notificações push, JourneyChat e rastreamento no app.</td></tr>
@@ -770,7 +794,7 @@ flowchart TD
             <tr data-id="M7-03"><td><span class="act-id">M7-03</span> <span class="act-name">Portal Transportador / agente de carga</span></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Frete, seguro, rotas, booking, BL/AWB e eventos logísticos.</td></tr>
             <tr data-id="M7-04"><td><span class="act-id">M7-04</span> <span class="act-name">Portal OCP / certificadora</span></td><td>M7</td><td><strong>1%</strong></td><td><strong>10%</strong></td><td>Anuências, CCP, ensaios, validade e alertas de vencimento de certificados.</td></tr>
             <tr data-id="M7-05"><td><span class="act-id">M7-05</span> <span class="act-name">Portal Designer / marca própria</span></td><td>M7</td><td><strong>0,5%</strong></td><td><strong>5%</strong></td><td>Cotação, especificações de produto e embalagem e entregas condicionais.</td></tr>
-            <tr data-id="M7-06"><td><span class="act-id">M7-06</span> <span class="act-name">Portal sourcing China em mandarim + tradução</span></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Portal da empresa de sourcing na China (padrão: Intmart), em mandarim, com tradução português ⇄ mandarim e original guardado.</td></tr>
+            <tr data-id="M7-06"><td><span class="act-id">M7-06</span> <span class="act-name">Portal sourcing China (Intmart) em mandarim, com tradução</span><small class="act-anexo">Anexo III: Portal sourcing China em mandarim + tradução</small></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Portal da empresa de sourcing na China (padrão: Intmart), em mandarim, com tradução português ⇄ mandarim e original guardado.</td></tr>
             <tr data-id="M7-07"><td><span class="act-id">M7-07</span> <span class="act-name">RBAC, moderação, SLA e auditoria dos portais</span></td><td>M7</td><td><strong>1%</strong></td><td><strong>10%</strong></td><td>Convite e aprovação do parceiro, visão só dos processos atribuídos, chat moderado, SLA e auditoria.</td></tr>
             <tr data-id="M7-08"><td><span class="act-id">M7-08</span> <span class="act-name">Painel admin CMH: parceiros, moderação, tabelas e conciliação</span></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Gestão de parceiros, fila de moderação, tabelas fiscais/frete e conciliação financeira.</td></tr>
             <tr><td><strong>Total</strong></td><td><strong>M1–M7</strong></td><td><strong>100%</strong></td><td><strong>100% por milestone</strong></td><td><strong>Contribuição integral do fluxo ao projeto.</strong></td><td><strong>—</strong></td></tr>
@@ -937,7 +961,27 @@ flowchart TD
 
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, securityLevel: 'strict', theme: 'base', themeVariables: { primaryColor: '#eef7ff', primaryTextColor: '#102a43', primaryBorderColor: '#1677c8', lineColor: '#627d98', secondaryColor: '#f0ebff', tertiaryColor: '#fff8eb' } });
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base', themeVariables: { primaryColor: '#eef7ff', primaryTextColor: '#102a43', primaryBorderColor: '#1677c8', lineColor: '#627d98', secondaryColor: '#f0ebff', tertiaryColor: '#fff8eb' } });
+    // O fluxograma só é desenhado com a página visível: desenhado por trás da
+    // tela de login, o Mermaid mede os textos com tamanho zero e falha
+    // ("Syntax error in text" abaixo do diagrama).
+    let diagramRendered = false;
+    const diagramElement = document.querySelector('.mermaid');
+    const diagramSource = diagramElement.textContent;
+    const renderDiagram = async () => {
+      if (diagramRendered || !document.body.classList.contains('authenticated')) return;
+      diagramRendered = true;
+      let failed = false;
+      try { await mermaid.run({ nodes: [diagramElement] }); } catch (error) { failed = true; }
+      // Se a página foi escondida no meio do desenho (sessão recusada), refaz no próximo login.
+      if (failed || diagramElement.querySelector('.error-icon')) {
+        diagramElement.removeAttribute('data-processed');
+        diagramElement.textContent = diagramSource;
+        diagramRendered = false;
+      }
+    };
+    renderDiagram();
+    document.addEventListener('control:login', renderDiagram);
 
 
     let diagramZoom = 1;
@@ -1506,59 +1550,12 @@ flowchart TD
       window.print();
     });
     window.addEventListener('afterprint', () => document.body.classList.remove('printing-progress'));
-    // Texto (ou trecho) do quadro do Mermaid → ID da atividade do Anexo III.
-    const activityAliases = [
-      ["Início do programa", 'M1-01'],
-      ["0 Cadastro: empresa", 'M4-01'],
-      ["Assinatura confirmada?", 'M4-01'],
-      ["Bloqueia novos estudos", 'M4-01'],
-      ["1 Produto: catálogo", 'M2-01'],
-      ["2 Atlas: NCM", 'M2-04'],
-      ["3 Cliente seleciona itens", 'M2-05'],
-      ["Nexus grava resultado sem aprovação formal", 'M2-06'],
-      ["Cliente segue para viabilidade oficial?", 'M2-06'],
-      ["Processo encerrado sem compra", 'M2-06'],
-      ["Hermes: frete, rotas", 'M5-03'],
-      ["Atlas/despachante: tributos", 'M5-04'],
-      ["Trade Brasil: taxa e importador de registro", 'M5-05'],
-      ["6 Nexus consolida", 'M5-08'],
-      ["Ajuste de produto, fornecedor ou custos", 'M5-01'],
-      ["Cliente aprova o relatório?", 'M5-09'],
-      ["8 Intmart realiza inspeção QC", 'M5-10'],
-      ["QC aprovada?", 'M5-10'],
-      ["Novo fornecedor ou ajuste de produção", 'M5-10'],
-      ["1ª parcela via Asaas", 'M4-02'],
-      ["Webhook confirmado e split válido?", 'M4-03'],
-      ["Produção bloqueada", 'M4-03'],
-      ["10 Fornecedor produz", 'M5-11'],
-      ["12 Produção concluída e embarque", 'M5-13'],
-      ["2ª parcela via Asaas", 'M4-04'],
-      ["Pagamento confirmado?", 'M4-05'],
-      ["Embarque bloqueado", 'M4-05'],
-      ["BL/AWB registrado", 'M5-13'],
-      ["Eventos, ETA, alertas e tracking", 'M5-14'],
-      ["13 Chegada no Brasil", 'M5-15'],
-      ["Parcela final via Asaas", 'M4-06'],
-      ["CMH prepara catálogo e rascunho DUIMP", 'M5-16'],
-      ["Despachante confere e transmite", 'M5-16'],
-      ["Canal aduaneiro?", 'M5-17'],
-      ["Exigência, documentos ou vistoria", 'M5-17'],
-      ["Carga liberada", 'M5-17'],
-      ["Nacionalização, entrega e encerramento", 'M5-18'],
-      ["Banco documental:", 'M5-18'],
-      ["Processo concluído", 'M5-18']
-    ];
-    const findActivity = (nodeText) => {
-      const normalizedNode = normalizeActivityText(nodeText);
-      const direct = activityRows.find((row) => normalizedNode.includes(normalizeActivityText(row.name)));
-      if (direct) return direct;
-      for (const [alias, id] of activityAliases) {
-        if (normalizedNode.includes(normalizeActivityText(alias))) {
-          const row = activityRows.find((item) => item.label === id);
-          if (row) return row;
-        }
-      }
-      return null;
+    // Cada quadro do fluxograma carrega o ID da atividade no id do nó
+    // (ex.: a_M5_12_amostra → M5-12). Quadros sem prefixo são marcos ou
+    // pontos de controle e não abrem atividade.
+    const findActivity = (node) => {
+      const match = /(?:^|-)a_(M[1-7])_(\d{2})_/.exec(node.id || '');
+      return match ? activityRows.find((row) => row.label === `${match[1]}-${match[2]}`) || null : null;
     };
     const activityModal = document.getElementById('activity-modal');
     const modalTitle = document.getElementById('activity-modal-title');
@@ -1579,7 +1576,7 @@ flowchart TD
     };
     const openActivityModal = (node) => {
       const title = node.textContent.replace(/\s+/g, ' ').trim();
-      const activity = findActivity(title);
+      const activity = findActivity(node);
       currentActivity = activity;
       modalTitle.textContent = activity ? activityDisplay(activity) : title;
       modalProjectPct.textContent = activity ? activity.projectPct : '—';
