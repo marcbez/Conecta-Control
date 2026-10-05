@@ -61,6 +61,10 @@
     .progress-save-btn { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--green); border-radius: 8px; background: #eefbf4; color: var(--green); font: inherit; font-size: .76rem; font-weight: 800; cursor: pointer; }
     .progress-save-btn:hover { background: #dff6e9; }
     .progress-save-status { display: block; margin-top: 5px; color: var(--muted); font-size: .7rem; text-align: center; }
+    .act-id { display: inline-block; min-width: 3.9em; margin-right: 4px; padding: 1px 6px; border-radius: 5px; background: #e7f3ff; color: var(--navy); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .78em; font-weight: 800; text-align: center; white-space: nowrap; }
+    .act-anexo { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; }
+    .act-meta { display: block; margin-top: 4px; color: var(--muted); font-size: .68rem; line-height: 1.25; }
+    .activity-switch input:disabled + .activity-slider { cursor: not-allowed; opacity: .55; }
     .activity-switch { position: relative; display: inline-block; width: 44px; height: 24px; vertical-align: middle; }
     .activity-switch input { width: 0; height: 0; opacity: 0; }
     .activity-slider { position: absolute; inset: 0; border-radius: 999px; background: #cbd5e1; cursor: pointer; transition: .2s; }
@@ -224,6 +228,7 @@
     .github-kpi small{display:block;color:#627d98;margin-top:4px}
     .github-status{margin:10px 0 0;color:#486581;font-size:.85rem;min-height:1.2em}
     .github-table-wrap{overflow:auto;margin-top:16px}.github-table{width:100%;border-collapse:collapse;font-size:.84rem}.github-table th,.github-table td{border-bottom:1px solid #e6edf3;padding:9px;text-align:left;vertical-align:top}.github-table th{color:#486581;background:#f7fafc}.evidence-ok{color:#087f5b;font-weight:700}.evidence-pending{color:#b45309;font-weight:700}
+    .pr-badge{display:inline-block;margin:0 4px 4px 0;padding:2px 8px;border-radius:999px;font-size:.76rem;font-weight:700;text-decoration:none;white-space:nowrap;background:#eef2f6;color:#334e68}.pr-mesclada{background:#e7f8ef;color:#087f5b}.pr-aberta{background:#e7f3ff;color:#1677c8}.pr-fechada{background:#f1f3f5;color:#627d98}
     .manual-note{border-left:4px solid #1677c8;background:#eef7ff;padding:12px 14px;border-radius:8px;margin-top:14px;color:#334e68;font-size:.88rem}
     @media (max-width:900px){.github-monitor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.github-config{grid-template-columns:1fr 1fr}.github-config button{width:100%}}
     @media (max-width:560px){.github-monitor-grid{grid-template-columns:1fr}.github-config{grid-template-columns:1fr}}
@@ -239,13 +244,14 @@
         <h1 class="login-title">Bem-vindo de volta</h1>
         <p class="login-subtitle">Acesse o roadmap e acompanhe a evolução do seu projeto.</p>
         <form id="login-form" class="login-form" novalidate>
-          <div class="login-field"><label for="login-email">E-mail ou usuário</label><input id="login-email" name="email" type="text" autocomplete="username" placeholder="seu.usuario" required></div>
-          <div class="login-field"><label for="login-password">Senha</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required></div>
-          <div class="login-options"><label class="login-check"><input id="login-remember" type="checkbox"> <span>Lembrar acesso</span></label><a class="login-link" href="#login" id="login-forgot">Esqueci minha senha</a></div>
+          <div class="login-field"><label for="login-endpoint">Fonte central (endereço do Apps Script)</label><input id="login-endpoint" name="endpoint" type="url" autocomplete="url" placeholder="https://script.google.com/macros/s/…/exec" required></div>
+          <div class="login-field"><label for="login-email">Usuário</label><input id="login-email" name="email" type="text" autocomplete="username" placeholder="seu.usuario" required></div>
+          <div class="login-field"><label for="login-password">Token de acesso</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Token entregue pelo administrador" required></div>
+          <div class="login-options"><label class="login-check"><input id="login-remember" type="checkbox"> <span>Lembrar acesso</span></label><a class="login-link" href="#login" id="login-forgot">Esqueci meu token</a></div>
           <p id="login-message" class="login-message" role="alert" aria-live="polite"></p>
           <button class="login-submit" type="submit">Entrar no roadmap</button>
         </form>
-        <p class="login-footnote">A tela de acesso está pronta para ser conectada a uma autenticação real. Nesta versão, o formulário funciona como gate de interface e não substitui uma camada de segurança no servidor.</p>
+        <p class="login-footnote">Usuário e token são conferidos pela fonte central a cada leitura e a cada marcação; o servidor registra quem marcou e quando. A página em si é estática: o login protege a homologação e o progresso, não o texto do roadmap.</p>
       </div>
     </div>
     <div class="login-visual" aria-hidden="true">
@@ -294,9 +300,11 @@
         <div class="progress-total"><strong id="progress-total-value">0%</strong><span>acumulado<br>das atividades</span></div>
         <div class="progress-track" aria-label="Progresso total"><div id="progress-total-fill" class="progress-fill"></div></div>
         <div id="milestone-progress-list"></div>
-        <p class="progress-note">Clique em um quadro do fluxograma e use “Marcar como concluída”.</p>
-        <button id="save-progress-local" class="progress-save-btn" type="button">Salvar estado no navegador</button>
-        <span id="progress-save-status" class="progress-save-status" role="status" aria-live="polite">Salvamento automático ativado.</span>
+        <p class="progress-note">Use os switches da tabela de atividades (M1-01 a M7-08) ou clique em um quadro do fluxograma e use “Marcar como concluída”. Cada marcação é gravada na fonte central com o seu usuário e a data.</p>
+        <button id="refresh-central-state" class="progress-save-btn" type="button">Atualizar da fonte central</button>
+        <span id="progress-save-status" class="progress-save-status" role="status" aria-live="polite">Conectando à fonte central…</span>
+        <span id="session-info" class="progress-save-status"></span>
+        <button id="logout-btn" class="progress-pdf-btn" type="button">Sair</button>
         <button id="export-progress-pdf" class="progress-pdf-btn" type="button">Exportar relatório de progresso em PDF</button>
       </div>
     </aside>
@@ -308,9 +316,9 @@
         <div class="callout success"><strong>Resultado esperado:</strong> o cliente solicita um produto, recebe uma simulação inicial, aprova um estudo oficial de viabilidade, acompanha os agentes e parceiros em uma jornada única e recebe a carga nacionalizada com rastreabilidade documental e operacional.</div>
         <div class="grid">
           <div class="card"><span class="tag">Produto</span><h3>Managed Marketplace</h3><p>Catálogo, sourcing, simulação DDP, compra assistida e jornada de importação.</p></div>
-          <div class="card"><span class="tag green">Operação</span><h3>Back-to-back</h3><p>Fornecedor na Ásia, Intmart, EAC USA, Trade Brasil, transportadores e despachantes coordenados pela plataforma.</p></div>
+          <div class="card"><span class="tag green">Operação</span><h3>Back-to-back</h3><p>Fornecedor na Ásia, Intmart (parceira padrão de sourcing China), EAC USA, Trade Brasil, transportadores e despachantes coordenados pela plataforma.</p></div>
           <div class="card"><span class="tag purple">IA</span><h3>Orquestração multiagente</h3><p>Nexus delega sourcing, classificação fiscal e logística a Dragon, Atlas e Hermes.</p></div>
-          <div class="card"><span class="tag orange">Escala</span><h3>Web, parceiros e mobile</h3><p>Plataforma web, 5 portais de parceiros e aplicativo React Native para lojas.</p></div>
+          <div class="card"><span class="tag orange">Escala</span><h3>Web, parceiros e mobile</h3><p>Plataforma web, 6 portais de parceiros, painel admin e aplicativo React Native para lojas.</p></div>
         </div>
       </section>
 
@@ -319,10 +327,10 @@
         <div class="grid">
           <div class="card"><h3>Segurança e privacidade</h3><ul><li>Multi-tenant com isolamento por cliente.</li><li>RLS, autenticação e RBAC.</li><li>LGPD com clickwrap e trilha de consentimento.</li><li>Credenciais fora do código e payloads protegidos.</li></ul></div>
           <div class="card"><h3>Confidencialidade</h3><ul><li>Comissões e custos internos não são expostos ao cliente.</li><li>Dados de um cliente jamais podem aparecer para outro.</li><li>Documentos e repasses têm acesso restrito por papel.</li></ul></div>
-          <div class="card"><h3>Operação financeira</h3><ul><li>Fluxo atualizado prevê Wise para todas as parcelas.</li><li>Conecta recebe e executa split aos parceiros.</li><li>Asaas aparece nos diagramas preliminares e deve ser harmonizado.</li></ul></div>
+          <div class="card"><h3>Operação financeira</h3><ul><li>Assinatura do plano via Asaas, na conta Conecta HUB.</li><li>Parcelas do processo via Asaas, na conta Conecta Agência, com split aos parceiros.</li><li>Câmbio fechado e liquidado pela trading, fora do Asaas.</li></ul></div>
           <div class="card"><h3>Seguro e fiscal</h3><ul><li>Seguro obrigatório em 100% dos transportes.</li><li>NCM e alíquotas são caso a caso.</li><li>Frete é dependência do CIF e dos impostos.</li></ul></div>
         </div>
-        <div class="callout warning"><strong>Decisão pendente de governança:</strong> padronizar a camada financeira entre o fluxo atualizado via Wise e os diagramas preliminares via Asaas. O roadmap considera Wise como referência operacional atual para as parcelas do processo e mantém Asaas para assinatura somente enquanto a decisão definitiva não for formalizada.</div>
+        <div class="callout success"><strong>Pagamentos e sourcing definidos:</strong> o Anexo III (M4) e o Manual Dev v2.0 (diagramas 09, 10 e 11) adotam Asaas — conta Conecta HUB para a assinatura do plano e conta Conecta Agência para as parcelas do processo, com split aos parceiros. A trading fecha e liquida o câmbio fora do Asaas e informa a taxa e o valor exato em reais antes da cobrança. Wise e Stripe deixam de ser opções, e as referências antigas foram removidas do roadmap. A parceira padrão de sourcing China e fonte do catálogo é a Intmart.</div>
       </section>
 
       <section id="arquitetura">
@@ -334,8 +342,8 @@
             <tr><td>Orquestração</td><td>Estados do processo, tarefas, aprovações, fan-out/gather e regras de liberação.</td><td>Nexus, workflows, webhooks e jobs de reconciliação.</td></tr>
             <tr><td>Inteligência</td><td>Sourcing, fiscalidade, logística e score da viabilidade.</td><td>Dragon, Atlas, Hermes e Nexus.</td></tr>
             <tr><td>Dados</td><td>Produtos, processos, custos, documentos, pagamentos, splits e eventos.</td><td>Postgres/Supabase, RLS, Elasticsearch/Meilisearch, storage.</td></tr>
-            <tr><td>Parceiros</td><td>Receber solicitações, enviar cotações, documentos e atualizações.</td><td>5 portais comerciais com RBAC e isolamento.</td></tr>
-            <tr><td>Operação externa</td><td>Pagamento, câmbio, tracking, Siscomex, produção, certificação e transporte.</td><td>Wise, Stripe, Shipgo/ShipsGo, Portal Único, parceiros.</td></tr>
+            <tr><td>Parceiros</td><td>Receber solicitações, enviar cotações, documentos e atualizações.</td><td>6 portais de parceiros com RBAC, moderação e isolamento, mais painel admin CMH.</td></tr>
+            <tr><td>Operação externa</td><td>Pagamento, câmbio, tracking, Siscomex, produção, certificação e transporte.</td><td>Asaas, trading (câmbio), ShipsGo, Portal Único, parceiros.</td></tr>
           </tbody>
         </table>
       </section>
@@ -378,7 +386,7 @@
         <section class="milestone m4" id="m4">
           <h2><span class="number">4</span>FinTech e Gateway SaaS</h2>
           <p><strong>Objetivo:</strong> habilitar assinatura, cobrança, parcelas condicionais, repasses e conciliação.</p>
-          <h3>Escopo</h3><ul><li>Planos Starter, Pro e Enterprise, mensais/anuais.</li><li>Assinatura via Stripe ou Asaas, conforme decisão financeira final.</li><li>Wise para parcelas do processo: 1ª antes da produção, 2ª após produção/no embarque e final na chegada ao Brasil.</li><li>Split da Conecta para Intmart/EAC, transportador, despachante, Trade Brasil, certificador, design e QC.</li><li>Webhook, idempotência, reconciliação por <code>wise_transfer_id</code> e estados de parcela.</li><li>Bloqueios: pagamento confirmado libera etapa; vencimento impede novos estudos oficiais sem apagar histórico.</li></ul>
+          <h3>Escopo</h3><ul><li>Planos Starter, Pro e Enterprise, mensais/anuais.</li><li>Assinatura via Asaas, na conta Conecta HUB.</li><li>Parcelas do processo via Asaas, na conta Conecta Agência: 1ª (30% do FOB + 1,5% CMH) antes da produção, 2ª (70% do FOB + 3,5% CMH) após a produção/no embarque e final na chegada ao Brasil; câmbio fechado pela trading fora do Asaas.</li><li>Split da Conecta para Intmart/EAC, transportador, despachante, Trade Brasil, certificador, design e QC.</li><li>Webhook, idempotência, reconciliação pelo identificador da cobrança no Asaas e estados de parcela.</li><li>Bloqueios: pagamento confirmado libera etapa; vencimento impede novos estudos oficiais sem apagar histórico.</li></ul>
           <h3>Modelo e governança</h3><ul><li><code>payments</code>: tipo, momento, percentual, moeda, status e identificadores externos.</li><li><code>payment_splits</code>: serviço, valor, comissão, repasse, status e item de viabilidade.</li><li>Cliente nunca acessa comissões internas ou composição de splits.</li></ul>
           <h3>Critérios de aceite</h3><ul><li>Não há avanço de etapa sem o webhook financeiro correspondente.</li><li>O mesmo webhook não gera cobrança ou repasse duplicado.</li><li>Os valores repassados correspondem apenas a serviços aprovados na viabilidade.</li><li>Conciliação e trilha financeira ficam disponíveis à administração.</li></ul>
         </section>
@@ -395,13 +403,13 @@
           <div class="step"><span class="number">5</span><div><strong>Coleta paralela:</strong> PI EAC, logística, seguro, aduana, Trade Brasil, anuências e design.</div></div>
           <div class="step"><span class="number">6</span><div><strong>Relatório:</strong> Nexus consolida itens tipados, total, moeda, score e validade.</div></div>
           <div class="step"><span class="number">7</span><div><strong>Aprovação:</strong> cliente aprova o relatório oficial.</div></div>
-          <div class="step"><span class="number">8</span><div><strong>QC:</strong> Intmart inspeciona a fábrica; reprovação retorna para fornecedor/ajuste.</div></div>
-          <div class="step"><span class="number">9</span><div><strong>1ª parcela:</strong> pagamento libera produção.</div></div>
-          <div class="step"><span class="number">10</span><div><strong>Produção:</strong> fabricação e acompanhamento.</div></div>
-          <div class="step"><span class="number">11</span><div><strong>Amostras:</strong> despacho, recebimento e aprovação.</div></div>
-          <div class="step"><span class="number">12</span><div><strong>Embarque + 2ª parcela:</strong> BL/AWB, Shipgo e habilitação do embarque.</div></div>
+          <div class="step"><span class="number">8</span><div><strong>Parcela 1:</strong> trading fecha o câmbio do sinal; PIX de 30% do FOB + 1,5% CMH no Asaas libera a produção.</div></div>
+          <div class="step"><span class="number">9</span><div><strong>Produção:</strong> fornecedor produz.</div></div>
+          <div class="step"><span class="number">10</span><div><strong>Inspeção de qualidade:</strong> Intmart inspeciona depois da produção; reprovação volta para ajuste.</div></div>
+          <div class="step"><span class="number">11</span><div><strong>Amostra física:</strong> enviada por courier antes do embarque; a aprovação do cliente libera o câmbio do saldo (diagrama 16).</div></div>
+          <div class="step"><span class="number">12</span><div><strong>Parcela 2 e embarque:</strong> PIX de 70% do FOB + 3,5% CMH; embarque só com seguro de carga; BL/AWB e rastreamento ShipsGo.</div></div>
           <div class="step"><span class="number">13</span><div><strong>Chegada:</strong> parcela final, DUIMP, desembaraço, nacionalização e entrega.</div></div>
-          <h3>PI/PL Maker e documentos</h3><ul><li>PI com EAC FOB, frete, seguro, CIF, incoterm, NCM, cronograma de pagamento e dados fiscais.</li><li>PL com volumes, peso, dimensões, CBM e conteúdo por caixa.</li><li>Banco documental versionado: viability, PI, PL, cert, BL/AWB, PLI, DI e desembaraço.</li><li>Portal Único: CMH prepara catálogo e rascunho; despachante credenciado confere e transmite DUIMP.</li><li>Rastreamento ShipsGo/Shipgo: estados booked, departed, in_transit, transshipment, arrived, discharged e delivered.</li></ul>
+          <h3>PI/PL Maker e documentos</h3><ul><li>PI do fornecedor por padrão; PI EAC opcional, com EAC FOB pela margem por divisor, frete, seguro, CIF, incoterm, NCM e cronograma de pagamento (diagrama 15).</li><li>PL com volumes, peso, dimensões, CBM e conteúdo por caixa.</li><li>Banco documental versionado: viability, PI, PL, cert, BL/AWB, PLI, DI e desembaraço.</li><li>Portal Único: CMH prepara catálogo e rascunho; despachante credenciado confere e transmite DUIMP.</li><li>Rastreamento ShipsGo/Shipgo: estados booked, departed, in_transit, transshipment, arrived, discharged e delivered.</li></ul>
           <h3>Critérios de aceite</h3><ul><li>Checkout bloqueia operação sem seguro e sem aceite do estudo oficial.</li><li>Produção, embarque e desembaraço são liberados somente pelos marcos financeiros e operacionais corretos.</li><li>Rastreamento não duplica eventos e encerra a cobrança quando entregue.</li><li>PI/PL e documentos ficam fixados ao processo ativo com RBAC.</li></ul>
         </section>
 
@@ -413,10 +421,10 @@
         </section>
 
         <section class="milestone m7" id="m7">
-          <h2><span class="number">7</span>Criação de 5 portais de parceiros</h2>
+          <h2><span class="number">7</span>Criação dos portais de parceiros</h2>
           <p><strong>Objetivo:</strong> criar uma camada operacional segura para parceiros comerciais participarem da jornada sem acessar dados indevidos.</p>
-          <h3>Portais previstos</h3><ol><li><strong>Trading/Trade Brasil:</strong> cadastro de empresa, cotação, taxa, RADAR, documentos e status de importador de registro.</li><li><strong>Despachante aduaneiro:</strong> conferência fiscal, DUIMP, documentos, exigências, DI e desembaraço.</li><li><strong>Transportador/agente de carga:</strong> frete, seguro, rotas, BL/AWB, booking e eventos logísticos.</li><li><strong>Certificadora/laboratório:</strong> anuências, CCP, ensaios, validade e alertas de vencimento.</li><li><strong>Design/marca própria e serviços operacionais:</strong> cotação, especificações, embalagem e entregas condicionais.</li></ol>
-          <h3>Capacidades comuns</h3><ul><li>Autenticação, RBAC, convite e aprovação do parceiro.</li><li>Visão somente dos processos atribuídos.</li><li>Recebimento de solicitações, envio de cotação, documentos e retornos.</li><li>Status, SLA, comentários, notificações e trilha de auditoria.</li><li>Banco documental com versionamento.</li><li>Integração com Nexus e jornada do cliente.</li><li>Proteção contra acesso cruzado e contra exposição de margem/comissão.</li></ul>
+          <h3>Portais previstos</h3><ol><li><strong>Trading/Trade Brasil:</strong> cadastro de empresa, cotação, taxa, RADAR, documentos e status de importador de registro.</li><li><strong>Despachante aduaneiro:</strong> conferência fiscal, DUIMP, documentos, exigências, DI e desembaraço.</li><li><strong>Transportador/agente de carga:</strong> frete, seguro, rotas, BL/AWB, booking e eventos logísticos.</li><li><strong>Certificadora/laboratório:</strong> anuências, CCP, ensaios, validade e alertas de vencimento.</li><li><strong>Design/marca própria e serviços operacionais:</strong> cotação, especificações, embalagem e entregas condicionais.</li><li><strong>Sourcing China (padrão: Intmart):</strong> portal em mandarim, com tradução português ⇄ mandarim e chat moderado.</li></ol>
+          <h3>Capacidades comuns</h3><ul><li>Autenticação, RBAC, convite e aprovação do parceiro.</li><li>Visão somente dos processos atribuídos.</li><li>Recebimento de solicitações, envio de cotação, documentos e retornos.</li><li>Status, SLA, comentários, notificações e trilha de auditoria.</li><li>Banco documental com versionamento.</li><li>Integração com Nexus e jornada do cliente.</li><li>Proteção contra acesso cruzado e contra exposição de margem/comissão.</li><li>Painel admin CMH: parceiros, fila de moderação, tabelas e conciliação.</li></ul>
           <h3>Critérios de aceite</h3><ul><li>Cada portal possui permissões específicas e testes negativos de autorização.</li><li>Um parceiro não visualiza processos ou documentos de outro parceiro.</li><li>Atualizações do parceiro refletem na jornada correta e geram notificação.</li><li>Gestão Conecta consegue auditar, reatribuir e bloquear acessos.</li></ul>
         </section>
       </section>
@@ -428,7 +436,7 @@
           <tr><td>Catálogo e processos</td><td>Necessários para Dragon, Atlas, Hermes e jornada.</td><td>Após a fundação; ETL pode ser paralelo à UI.</td></tr>
           <tr><td>Simulação DDP</td><td>Entrada do estudo oficial.</td><td>Antes da viabilidade consolidada.</td></tr>
           <tr><td>Relatório de viabilidade</td><td>Base dos pagamentos, documentos e aprovação.</td><td>Antes de produção e portais operacionais.</td></tr>
-          <tr><td>Política financeira Wise/Asaas</td><td>Define APIs, webhooks e estados de liberação.</td><td>Decidir antes do hardening financeiro.</td></tr>
+          <tr><td>Política financeira Asaas (HUB e Agência)</td><td>Define APIs, webhooks e estados de liberação.</td><td>Definida no Anexo III e no Manual v2.0; seguir os diagramas 09 a 11.</td></tr>
           <tr><td>Webhooks e integrações</td><td>Movem o processo entre etapas.</td><td>Construir com idempotência e observabilidade.</td></tr>
           <tr><td>Portais de parceiros</td><td>Dependem de RBAC, processos, documentos e notificações.</td><td>Após contratos de dados estabilizados; podem ser entregues incrementalmente.</td></tr>
           <tr><td>React Native</td><td>Reaproveita APIs e regras da web.</td><td>Após estabilização dos fluxos críticos; pode começar com design system.</td></tr>
@@ -451,7 +459,7 @@
       <section id="riscos">
         <h2>7. Riscos e decisões que devem permanecer visíveis</h2>
         <table><thead><tr><th>Risco/decisão</th><th>Tratamento</th></tr></thead><tbody>
-          <tr><td>Wise versus Asaas</td><td>Escolher o sistema de registro para assinatura e o sistema de liquidação das parcelas; separar claramente assinatura SaaS de pagamento da importação.</td></tr>
+          <tr><td>Câmbio fora do Asaas</td><td>A trading fecha e liquida o câmbio fora do Asaas; a parcela só é gerada depois do estado <code>cambio_fechado</code>, com taxa e valor exato em reais. Manter assinatura SaaS (Conecta HUB) separada do pagamento da importação (Conecta Agência).</td></tr>
           <tr><td>Shipgo versus ShipsGo</td><td>Confirmar fornecedor, API, eventos, webhook e contrato; manter adaptador para evitar acoplamento da jornada.</td></tr>
           <tr><td>Classificação fiscal</td><td>NCM preliminar nunca deve ser tratado como decisão final; exigir confirmação humana na viabilidade oficial.</td></tr>
           <tr><td>Alíquotas e câmbio</td><td>Registrar fonte, data, moeda, PTAX D-1 e versão da regra usada no cálculo.</td></tr>
@@ -478,94 +486,117 @@
         <div class="diagram-wrap">
           <div class="mermaid">
 flowchart TD
-  START([Início do programa]) --> M1["M1 — Milestone 1: Fundação e Segurança"]
+  a_M1_01_ini([Início do programa]) --> M1["M1 — Milestone 1: Fundação e Segurança"]
   M1 --> M2["M2 — Milestone 2: Engine de Catálogo e DDP"]
   M1 --> M3["M3 — Milestone 3: Agentes IA e Omnichannel"]
   M1 --> M4["M4 — Milestone 4: FinTech e Gateway SaaS"]
   M2 --> M5["M5 — Milestone 5: Marketplace e Corporate"]
   M3 --> M5
   M4 --> M5
-  M1 --> M7["M7 — Milestone 7: Portais de 5 Parceiros"]
+  M1 --> M7["M7 — Milestone 7: Portais de Parceiros"]
   M5 --> M7
   M5 --> M6["M6 — Milestone 6: React Native e Publicação nas Lojas"]
   M7 --> M6
 
-  M1 --> C0["0 Cadastro: empresa, RADAR/Trade, plano e LGPD"]
-  C0 --> PAY0{"Assinatura confirmada?"}
-  PAY0 -- Não --> HOLD0["Bloqueia novos estudos; mantém histórico"]
-  PAY0 -- Sim --> A1["1 Produto: catálogo Intmart ou upload"]
-  A1 --> D1["Dragon: sourcing individual ou lote"]
-  D1 --> A2["2 Atlas: NCM, anuências, antidumping e restrições"]
-  A2 --> A3["3 Cliente seleciona itens"]
-  A3 --> A4["4 Simulação DDP preliminar"]
-  A4 --> N0["Nexus grava resultado sem aprovação formal"]
-  N0 --> DEC1{"Cliente segue para viabilidade oficial?"}
-  DEC1 -- Não --> END0([Processo encerrado sem compra])
-  DEC1 -- Sim --> B1["5 Coleta paralela de custos"]
+  M1 --> a_M4_01_cad["0 · Cadastro: empresa, RADAR ou trading, plano e aceite LGPD"]
+  a_M4_01_cad --> a_M4_01_pay{"Assinatura paga no Asaas (Conecta HUB)?"}
+  a_M4_01_pay -- Não --> a_M4_01_blk["Bloqueia novos estudos; mantém histórico"]
+  a_M4_01_pay -- Sim --> a_M2_01_prod["Produto: catálogo Intmart ou upload"]
 
-  B1 --> EAC["EAC: PI/PL e margem por divisor"]
-  B1 --> HERMES["Hermes: frete, rotas, CBM e seguro obrigatório"]
-  B1 --> ATLAS["Atlas/despachante: tributos, NCM confirmado e taxas"]
-  B1 --> TRADE["Trade Brasil: taxa e importador de registro, se necessário"]
-  B1 --> CERT["Certificadora/laboratório, se aplicável"]
-  B1 --> DESIGN["Design/marca própria, se aplicável"]
-  EAC --> B2["6 Nexus consolida Relatório de Viabilidade"]
-  HERMES --> B2
-  ATLAS --> B2
-  TRADE --> B2
-  CERT --> B2
-  DESIGN --> B2
-  B2 --> DEC2{"Cliente aprova o relatório?"}
-  DEC2 -- Não --> ADJ["Ajuste de produto, fornecedor ou custos"]
-  ADJ --> B1
-  DEC2 -- Sim --> QC["8 Intmart realiza inspeção QC"]
-  QC --> DEC3{"QC aprovada?"}
-  DEC3 -- Não --> ADJ2["Novo fornecedor ou ajuste de produção"]
-  ADJ2 --> D1
-  DEC3 -- Sim --> P1["9 1ª parcela via Wise: mercadoria + despesas"]
-  P1 --> W1{"Webhook confirmado e split válido?"}
-  W1 -- Não --> BLOCK1["Produção bloqueada; retry/ação manual"]
-  W1 -- Sim --> PROD["10 Fornecedor produz"]
-  PROD --> SAMPLE["11 Amostras: envio e aprovação"]
-  SAMPLE --> EMB["12 Produção concluída e embarque"]
-  EMB --> P2["2ª parcela via Wise: saldo da mercadoria"]
-  P2 --> W2{"Pagamento confirmado?"}
-  W2 -- Não --> BLOCK2["Embarque bloqueado"]
-  W2 -- Sim --> TRACK["BL/AWB registrado no Shipgo/ShipsGo"]
-  TRACK --> EVENTS["Eventos, ETA, alertas e tracking no painel"]
-  EVENTS --> ARRIVE["13 Chegada no Brasil"]
-  ARRIVE --> P3["Parcela final via Wise: impostos e despesas"]
-  P3 --> DUIMP["CMH prepara catálogo e rascunho DUIMP"]
-  DUIMP --> BROKER["Despachante confere e transmite no Portal Único"]
-  BROKER --> CHANNEL{"Canal aduaneiro?"}
-  CHANNEL -- Verde --> RELEASE["Carga liberada"]
-  CHANNEL -- Amarelo/Vermelho/Cinza --> EXIG["Exigência, documentos ou vistoria"]
-  EXIG --> BROKER
-  RELEASE --> DELIVERY["Nacionalização, entrega e encerramento"]
-  DELIVERY --> DOCS["Banco documental: PI, PL, certificados, BL/AWB, DI e desembaraço"]
-  DOCS --> END1([Processo concluído])
+  subgraph F1["1 · Simulação agêntica DDP · sem aprovações"]
+    a_M2_01_prod --> a_M2_02_dragon["Dragon: fornecedor e preço FOB, individual ou lote"]
+    a_M2_03_accio["Accio Work no Dragon"] -.-> a_M2_02_dragon
+    a_M2_02_dragon --> a_M2_04_atlas["Atlas: NCM proposto, tributos, anuências e regras ZFM"]
+    a_M2_07_tab["Tabelas fiscais e de frete versionadas"] -.-> a_M2_04_atlas
+    a_M2_04_atlas --> a_M2_05_sel["Cliente seleciona os itens"]
+    a_M2_05_sel --> a_M2_06_ddp["Hermes: frete e seguro; custo total DDP estimado"]
+    a_M2_06_ddp --> a_M2_06_res["Resultado entregue: total em R$, câmbio, data e validade"]
+  end
 
-  NEXUS["Nexus: orquestra tarefas e estados"] -.-> D1
-  NEXUS -.-> A2
-  NEXUS -.-> HERMES
-  NEXUS -.-> B2
-  M7 -.-> TRADE
-  M7 -.-> BROKER
-  M7 -.-> HERMES
-  M7 -.-> CERT
-  M7 -.-> DESIGN
-  M4 -.-> P1
-  M4 -.-> P2
-  M4 -.-> P3
+  subgraph F2["2 · Decisão do cliente e estudo de viabilidade oficial"]
+    a_M2_06_res --> a_M2_06_dec{"Seguir com o estudo de viabilidade oficial?"}
+    a_M2_06_dec -- Não --> a_M2_06_end([Encerrado sem compra])
+    a_M2_06_dec -- Sim --> a_M5_01_coleta["Estudo de viabilidade oficial: coleta paralela de custos"]
+    a_M5_01_coleta --> a_M5_02_pipl["PI e PL: PI do fornecedor (padrão) ou PI EAC opcional"]
+    a_M5_01_coleta --> a_M5_03_hermes["Hermes: frete firme, rotas, CBM e seguro obrigatório"]
+    a_M5_01_coleta --> a_M5_04_atlas["Atlas e despachante: NCM confirmado, tributos e taxas"]
+    a_M5_01_coleta --> a_M5_05_trading["Trading: taxa e importador de registro, se necessário"]
+    a_M5_01_coleta --> a_M5_06_cert["Certificadora/laboratório, se aplicável"]
+    a_M5_01_coleta --> a_M5_07_design["Design/marca própria, se aplicável"]
+    a_M5_02_pipl --> a_M5_08_nexus["Nexus consolida o estudo de viabilidade"]
+    a_M5_03_hermes --> a_M5_08_nexus
+    a_M5_04_atlas --> a_M5_08_nexus
+    a_M5_05_trading --> a_M5_08_nexus
+    a_M5_06_cert --> a_M5_08_nexus
+    a_M5_07_design --> a_M5_08_nexus
+    a_M5_08_nexus --> a_M5_09_dec{"Cliente aprova o estudo?"}
+    a_M5_09_dec -- Não --> a_M5_01_ajuste["Ajuste de produto, fornecedor ou custos; nova versão da PI"]
+    a_M5_01_ajuste --> a_M5_01_coleta
+    a_M5_09_dec -- Sim --> a_M5_09_aberto["Processo de importação aberto"]
+  end
+
+  subgraph F3["3 · Comprar e fabricar"]
+    a_M5_09_aberto --> a_M5_06_exige{"Exige certificado?"}
+    a_M5_06_exige -- Sim --> a_M5_06_ccp["Certificadora avalia; CCP com validade"]
+    a_M5_06_exige -- Não --> a_M4_02_cambio["Trading fecha o câmbio do sinal e informa taxa e valor em reais"]
+    a_M5_06_ccp --> a_M4_02_cambio
+    a_M4_02_cambio --> a_M4_02_p1["Parcela 1 · PIX no Asaas: 30% do FOB + 1,5% CMH"]
+    a_M4_02_p1 --> a_M4_03_ok{"Webhook confirmado e split válido?"}
+    a_M4_03_ok -- Não --> a_M4_03_blk["Produção bloqueada; retry ou ação manual"]
+    a_M4_03_ok -- Sim --> a_M4_03_paga["Trading liquida o câmbio e paga 30% ao fornecedor"]
+    a_M4_03_paga --> a_M5_11_prod["Fornecedor produz"]
+    a_M5_11_prod --> a_M5_10_qc{"Inspeção de qualidade ok? (Intmart)"}
+    a_M5_10_qc -- Não --> a_M5_10_ajuste["Ajuste da produção"]
+    a_M5_10_ajuste --> a_M5_11_prod
+    a_M5_10_qc -- Sim --> a_M5_12_amostra{"Amostra física aprovada pelo cliente?"}
+    a_M5_12_amostra -- Não --> a_M5_12_nova["Ajuste e nova amostra; na 2ª reprovação, escala para a gestão CMH"]
+    a_M5_12_nova --> a_M5_12_amostra
+    a_M5_12_amostra -- Sim --> a_M4_04_cambio["Trading fecha o câmbio do saldo e informa taxa e valor em reais"]
+    a_M4_04_cambio --> a_M4_04_p2["Parcela 2 · PIX no Asaas: 70% do FOB + 3,5% CMH"]
+    a_M4_04_p2 --> a_M4_05_ok{"Pagamento confirmado e split válido?"}
+    a_M4_05_ok -- Não --> a_M4_05_blk["Embarque bloqueado"]
+    a_M4_05_ok -- Sim --> a_M4_05_paga["Trading liquida o câmbio e paga 70% ao fornecedor"]
+  end
+
+  subgraph F4["4 · Transportar"]
+    a_M4_05_paga --> a_M5_13_seguro{"Seguro de carga incluído?"}
+    a_M5_13_seguro -- Não --> a_M5_13_blk["Embarque bloqueado"]
+    a_M5_13_seguro -- Sim --> a_M5_13_emb["Embarque: BL ou AWB emitido"]
+    a_M5_13_emb --> a_M5_14_track["Rastreamento ShipsGo: eventos, ETA e alertas"]
+    a_M5_14_track --> a_M5_15_cheg["Chegada no Brasil"]
+    a_M5_15_cheg --> a_M4_06_pf["Parcela final no Asaas: impostos e despesas"]
+  end
+
+  subgraph F5["5 · Nacionalizar"]
+    a_M4_06_pf --> a_M5_16_duimp["Plataforma prepara catálogo e rascunho da DUIMP"]
+    a_M5_16_duimp --> a_M5_16_desp["Despachante confere e transmite no Portal Único"]
+    a_M5_16_desp --> a_M5_17_canal{"Canal da Receita?"}
+    a_M5_17_canal -- Verde --> a_M5_17_lib["Carga liberada"]
+    a_M5_17_canal -- "Amarelo, vermelho ou cinza" --> a_M5_17_exig["Exigência ou conferência: documentos e vistoria"]
+    a_M5_17_exig --> a_M5_17_lib
+    a_M5_17_lib --> a_M5_18_ent["Entrega e banco documental: PI, PL, certificados, BL/AWB e DUIMP"]
+    a_M5_18_ent --> a_M5_18_fim([Processo concluído])
+  end
+
+  M3 --> PLAT
+  subgraph PLAT["Plataforma e agentes (M3)"]
+    direction LR
+    a_M3_01_nexus["Nexus: orquestra Dragon, Atlas e Hermes; tarefas e estados"]
+    a_M3_02_chat["Chat na plataforma; WhatsApp e e-mail só notificam com link"]
+    a_M3_03_hooks["Webhooks Asaas e ShipsGo com fila e retentativas"]
+    a_M3_04_mem["Memória opaca (CMH-CLI-001) e auditoria dos agentes"]
+  end
 
   classDef milestone fill:#102a43,color:#fff,stroke:#102a43,stroke-width:2px;
   classDef agent fill:#f0ebff,color:#3b2778,stroke:#6d4acb;
   classDef block fill:#fff1f0,color:#8c211b,stroke:#c2413b;
   classDef decision fill:#fff8eb,color:#7a4b00,stroke:#d97706;
+  classDef payment fill:#e7f8ef,color:#0b5d3b,stroke:#168a5b;
   class M1,M2,M3,M4,M5,M6,M7 milestone;
-  class NEXUS,D1,A2,HERMES,EAC agent;
-  class HOLD0,BLOCK1,BLOCK2 block;
-  class PAY0,DEC1,DEC2,DEC3,W1,W2,CHANNEL decision;
+  class a_M3_01_nexus,a_M2_02_dragon,a_M2_04_atlas,a_M2_06_ddp,a_M5_03_hermes,a_M5_04_atlas,a_M5_08_nexus agent;
+  class a_M4_01_blk,a_M4_03_blk,a_M4_05_blk,a_M5_13_blk block;
+  class a_M4_01_pay,a_M2_06_dec,a_M5_09_dec,a_M5_06_exige,a_M4_03_ok,a_M5_10_qc,a_M5_12_amostra,a_M4_05_ok,a_M5_13_seguro,a_M5_17_canal decision;
+  class a_M4_02_p1,a_M4_04_p2,a_M4_06_pf payment;
           </div>
         </div>
         <p class="footer">Roadmap consolidado a partir das especificações de contrato, fluxo de desenvolvimento, manual de diagramas e milestones adicionais fornecidos para o Conecta Market.</p>
@@ -582,6 +613,8 @@ flowchart TD
             <div class="activity-kpi"><strong id="activity-milestone-pct">—</strong><span>do milestone</span></div>
           </div>
           <p><strong>Milestone:</strong> <span id="activity-milestone">—</span></p>
+          <p><strong>Homologação:</strong> <span id="activity-homologation">—</span></p>
+          <p><strong>PRs vinculadas:</strong> <span id="activity-prs">—</span></p>
           <p><strong>Contribuição:</strong> <span id="activity-description">—</span></p>
           <div class="activity-modal-actions"><button id="activity-complete-toggle" class="complete-btn" type="button" disabled>Marcar como concluída</button></div>
           <p class="activity-hint">Percentuais conforme a matriz de contribuição real dos quadros do fluxograma.</p>
@@ -600,6 +633,7 @@ flowchart TD
           <p><strong>Milestone:</strong> <span id="timeline-modal-milestone">—</span></p>
           <p><strong>Atividade:</strong> <span id="timeline-modal-activity">—</span></p>
           <p><strong>Ação registrada:</strong> <span id="timeline-modal-action">—</span></p>
+          <p><strong>Registrado por:</strong> <span id="timeline-modal-user">—</span></p>
           <p><strong>Descrição:</strong> <span id="timeline-modal-description">—</span></p>
         </div>
       </dialog>
@@ -611,7 +645,7 @@ flowchart TD
         <h2>Progresso por milestone</h2>
         <table><thead><tr><th>Milestone</th><th>Peso no projeto</th><th>Concluído no milestone</th><th>Contribuição acumulada</th><th>Status</th></tr></thead><tbody id="progress-report-milestones"></tbody></table>
         <h2>Atividades concluídas</h2>
-        <table><thead><tr><th>Atividade</th><th>Milestone</th><th>% do projeto</th><th>% do milestone</th><th>Descrição</th></tr></thead><tbody id="progress-report-activities"></tbody></table>
+        <table><thead><tr><th>Atividade</th><th>Milestone</th><th>% do projeto</th><th>% do milestone</th><th>Homologada por</th><th>Descrição</th></tr></thead><tbody id="progress-report-activities"></tbody></table>
       </section>
 
       <section id="ponderacao">
@@ -659,7 +693,7 @@ flowchart TD
               <td>FinTech e Gateway SaaS</td>
               <td><strong>15%</strong></td>
               <td>60%</td>
-              <td>Assinaturas, planos, pagamentos, Wise para parcelas, webhooks, split, conciliação e bloqueios de liberação.</td>
+              <td>Assinaturas, planos, pagamentos via Asaas (HUB e Agência), parcelas, webhooks, split, conciliação e bloqueios de liberação.</td>
               <td>Pagamentos idempotentes, split por item aprovado, reconciliação, trilha financeira e bloqueio de etapas sem confirmação.</td>
             </tr>
             <tr>
@@ -680,11 +714,11 @@ flowchart TD
             </tr>
             <tr>
               <td><strong>M7</strong></td>
-              <td>Portais de 5 parceiros</td>
+              <td>Portais de parceiros</td>
               <td><strong>10%</strong></td>
               <td>100%</td>
-              <td>Portais de trading/Trade Brasil, despachante, transportador, certificadora/laboratório e design/serviços, com RBAC e auditoria.</td>
-              <td>Cinco portais operacionais, dados segregados, cotações/documentos/status integrados e testes de autorização aprovados.</td>
+              <td>Portais de trading, despachante, transportador, certificadora/OCP, design/marca própria e sourcing China, com RBAC, moderação, auditoria e painel admin CMH.</td>
+              <td>Seis portais operacionais e painel admin, dados segregados, cotações/documentos/status integrados e testes de autorização aprovados.</td>
             </tr>
             <tr>
               <td colspan="2"><strong>Total do contrato</strong></td>
@@ -694,12 +728,13 @@ flowchart TD
             </tr>
           </tbody>
         </table>
-        <h3>Contribuição real dos quadros do fluxograma</h3>
-        <p>Esta matriz abre cada milestone em seus quadros funcionais do Mermaid. A coluna <strong>% do projeto</strong> mostra quanto o quadro representa no contrato completo; a coluna <strong>% do milestone</strong> mostra sua participação dentro do milestone correspondente. As linhas somam 100% do projeto e 100% dentro de cada milestone.</p>
+        <h3>Atividades do Anexo III e contribuição no contrato</h3>
+        <p>Esta matriz reproduz as <strong>54 atividades do Anexo III</strong>, uma por linha, com o ID usado nas PRs (M1-01 a M7-08). Os títulos seguem o Manual do Dev v2.1; quando diferem, o nome do Anexo III aparece logo abaixo. A coluna <strong>% do projeto</strong> mostra quanto a atividade representa no contrato completo; a coluna <strong>% do milestone</strong> mostra sua participação dentro do milestone correspondente. As linhas somam 100% do projeto e 100% dentro de cada milestone. Os quadros do fluxograma abrem a atividade correspondente.</p>
+        <div id="migration-note" class="callout warning" hidden></div>
         <table id="fluxo-peso-table">
           <thead>
             <tr>
-              <th>Quadro/etapa do fluxograma</th>
+              <th>Atividade (ID · nome)</th>
               <th>Milestone</th>
               <th>% do projeto</th>
               <th>% do milestone</th>
@@ -708,42 +743,64 @@ flowchart TD
             </tr>
           </thead>
           <tbody>
-            <tr><td>M1 — Fundação e Segurança</td><td>M1</td><td><strong>15%</strong></td><td><strong>100%</strong></td><td>Base técnica, segurança, multi-tenant, LGPD, autenticação, RLS e governança.</td></tr>
-            <tr><td>1 Produto: catálogo ou upload</td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Entrada dos produtos por catálogo Intmart ou formatos multimodais.</td></tr>
-            <tr><td>Dragon: sourcing individual ou lote</td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Pesquisa de fornecedores, alternativas e preço FOB.</td></tr>
-            <tr><td>2 Atlas: NCM e restrições</td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Classificação preliminar, tributos, anuências, antidumping e regras ZFM.</td></tr>
-            <tr><td>3 Seleção de itens</td><td>M2</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Seleção individual ou em lote para a simulação.</td></tr>
-            <tr><td>4 Simulação DDP preliminar</td><td>M2</td><td><strong>4%</strong></td><td><strong>26,67%</strong></td><td>Estimativa de custo total com FOB, frete, seguro, tributos e taxas.</td></tr>
-            <tr><td>Nexus: orquestra tarefas e estados</td><td>M3</td><td><strong>15%</strong></td><td><strong>100%</strong></td><td>Delegação, persistência, comunicação omnichannel, retries e consolidação dos agentes.</td></tr>
-            <tr><td>0 Cadastro e assinatura</td><td>M4</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Plano, qualificação RADAR/Trade, pagamento e liberação de acesso.</td></tr>
-            <tr><td>9 1ª parcela via Wise</td><td>M4</td><td><strong>4%</strong></td><td><strong>26,67%</strong></td><td>Cobrança da parcela anterior à produção e composição do repasse.</td></tr>
-            <tr><td>Webhook e split da 1ª parcela</td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Confirmação idempotente, conciliação e liberação da produção.</td></tr>
-            <tr><td>12 2ª parcela via Wise</td><td>M4</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Saldo da mercadoria após produção e preparação do embarque.</td></tr>
-            <tr><td>Webhook e split da 2ª parcela</td><td>M4</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Habilitação do embarque, repasses e atualização financeira do processo.</td></tr>
-            <tr><td>5 Coleta paralela de custos</td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Disparo coordenado da viabilidade oficial e coleta fan-out/gather.</td></tr>
-            <tr><td>EAC: PI/PL e margem por divisor</td><td>M5</td><td><strong>0,8%</strong></td><td><strong>4%</strong></td><td>Proforma, Packing List, CIF e margem EAC sem exposição da composição interna.</td></tr>
-            <tr><td>Hermes: frete, rotas e seguro</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Frete, CBM, prazo, seguro obrigatório e base logística do CIF.</td></tr>
-            <tr><td>Atlas/despachante: tributos e taxas</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Impostos por NCM, despesas aduaneiras e retorno fiscal.</td></tr>
-            <tr><td>Trade Brasil: taxa e importador de registro</td><td>M5</td><td><strong>0,5%</strong></td><td><strong>2,5%</strong></td><td>Seleção do importador de registro e taxa da operação quando o cliente não possui RADAR.</td></tr>
-            <tr><td>Certificadora/laboratório</td><td>M5</td><td><strong>0,4%</strong></td><td><strong>2%</strong></td><td>Anuências, ensaios e certificado/CCP quando exigidos pelo produto.</td></tr>
-            <tr><td>Design/marca própria</td><td>M5</td><td><strong>0,3%</strong></td><td><strong>1,5%</strong></td><td>Cotação de produto, embalagem e marca própria quando contratada.</td></tr>
-            <tr><td>6 Nexus consolida o relatório</td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Relatório final com itens tipados, total, moeda, score e validade.</td></tr>
-            <tr><td>Decisão e aprovação do cliente</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Aceite formal que autoriza a inspeção e a continuidade da operação.</td></tr>
-            <tr><td>8 Inspeção QC e decisão de qualidade</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Visita da Intmart; aprovação libera produção e reprovação retorna para ajuste.</td></tr>
-            <tr><td>10 Produção</td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Fabricação liberada, acompanhamento e confirmação de conclusão.</td></tr>
-            <tr><td>11 Amostras</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Despacho, recebimento e aprovação das amostras.</td></tr>
-            <tr><td>12 Embarque e BL/AWB</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Embarque condicionado ao pagamento e emissão do documento de transporte.</td></tr>
-            <tr><td>Tracking e eventos Shipgo/ShipsGo</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>ETA, eventos, alertas, polling/webhook e encerramento quando entregue.</td></tr>
-            <tr><td>13 Chegada e parcela final</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Liquidação na chegada e início da nacionalização.</td></tr>
-            <tr><td>DUIMP e conferência do despachante</td><td>M5</td><td><strong>1,5%</strong></td><td><strong>7,5%</strong></td><td>Catálogo, rascunho, conferência e transmissão no Portal Único.</td></tr>
-            <tr><td>Canal, exigência e liberação aduaneira</td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Tratamento dos canais verde, amarelo, vermelho e cinza.</td></tr>
-            <tr><td>Entrega e banco documental</td><td>M5</td><td><strong>1,5%</strong></td><td><strong>7,5%</strong></td><td>Entrega, encerramento e documentos versionados vinculados ao processo.</td></tr>
-            <tr><td>M6 — React Native e publicação</td><td>M6</td><td><strong>10%</strong></td><td><strong>100%</strong></td><td>Adaptação mobile, builds, testes e preparação de publicação Android/iOS.</td></tr>
-            <tr><td>M7 — Portais de 5 parceiros</td><td>M7</td><td><strong>10%</strong></td><td><strong>100%</strong></td><td>Portais de trading, despachante, transportador, certificação e design/serviços.</td></tr>
+            <tr data-id="M1-01"><td><span class="act-id">M1-01</span> <span class="act-name">Fundação técnica em código novo, tenancy e RLS</span></td><td>M1</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Base técnica em código novo, isolamento por empresa no banco (RLS) e no servidor, com teste cruzado entre tenants.</td></tr>
+            <tr data-id="M1-02"><td><span class="act-id">M1-02</span> <span class="act-name">Auth, RBAC e consentimento LGPD</span></td><td>M1</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Login, papéis por perfil e por processo e aceite obrigatório de termos e privacidade (LGPD).</td></tr>
+            <tr data-id="M1-03"><td><span class="act-id">M1-03</span> <span class="act-name">Estados de domínio e validação</span></td><td>M1</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Máquinas de estado de processo, parcela, certificado e rastreamento, com validação das transições.</td></tr>
+            <tr data-id="M1-04"><td><span class="act-id">M1-04</span> <span class="act-name">Proteção de IA, segredos e observabilidade</span></td><td>M1</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Referência opaca nas delegações aos agentes, segredos fora do código, logs, métricas e alertas.</td></tr>
+            <tr data-id="M1-05"><td><span class="act-id">M1-05</span> <span class="act-name">Design System e componentes reutilizáveis</span></td><td>M1</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Tokens, componentes e padrões de tela compartilhados entre web e mobile.</td></tr>
+            <tr data-id="M1-06"><td><span class="act-id">M1-06</span> <span class="act-name">Infraestrutura VPS: backup, monitoramento, roteiro e homologação</span></td><td>M1</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Backup fora do VPS com restauração testada, monitoramento, TLS, roteiro de deploy e homologação separada.</td></tr>
+            <tr data-id="M2-01"><td><span class="act-id">M2-01</span> <span class="act-name">Produto: catálogo Intmart ou upload</span><small class="act-anexo">Anexo III: 1 Produto: catálogo INTMART ou upload</small></td><td>M2</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Entrada dos produtos por catálogo Intmart ou formatos multimodais.</td></tr>
+            <tr data-id="M2-02"><td><span class="act-id">M2-02</span> <span class="act-name">Dragon: sourcing individual ou lote</span></td><td>M2</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Pesquisa de fornecedores, alternativas e preço FOB.</td></tr>
+            <tr data-id="M2-03"><td><span class="act-id">M2-03</span> <span class="act-name">Integração Accio Work no Dragon</span></td><td>M2</td><td><strong>1%</strong></td><td><strong>6,67%</strong></td><td>Busca de fornecedores pelo Accio Work dentro do fluxo do Dragon.</td></tr>
+            <tr data-id="M2-04"><td><span class="act-id">M2-04</span> <span class="act-name">Atlas: NCM proposto, tributos, anuências e regras ZFM</span><small class="act-anexo">Anexo III: Atlas: NCM e restrições</small></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Classificação NCM preliminar com fonte e data, tributos, anuências, antidumping e regras ZFM.</td></tr>
+            <tr data-id="M2-05"><td><span class="act-id">M2-05</span> <span class="act-name">Seleção de itens, individual ou em lote</span><small class="act-anexo">Anexo III: 3 Seleção de itens</small></td><td>M2</td><td><strong>1%</strong></td><td><strong>6,67%</strong></td><td>Seleção individual ou em lote para a simulação.</td></tr>
+            <tr data-id="M2-06"><td><span class="act-id">M2-06</span> <span class="act-name">Simulação agêntica DDP, sem aprovações</span><small class="act-anexo">Anexo III: 4 Simulação DDP preliminar</small></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Estimativa de custo total com FOB, frete, seguro, tributos e taxas.</td></tr>
+            <tr data-id="M2-07"><td><span class="act-id">M2-07</span> <span class="act-name">Tabelas fiscais/frete versionadas com carga inicial</span></td><td>M2</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>TEC, TIPI, ICMS por UF, regras ZFM e premissas de frete versionadas, com carga inicial.</td></tr>
+            <tr data-id="M3-01"><td><span class="act-id">M3-01</span> <span class="act-name">Nexus: orquestra tarefas e estados</span></td><td>M3</td><td><strong>5%</strong></td><td><strong>33,33%</strong></td><td>Delegação aos agentes Dragon, Atlas e Hermes, persistência por processo, fan-out/gather, retries e consolidação.</td></tr>
+            <tr data-id="M3-02"><td><span class="act-id">M3-02</span> <span class="act-name">Chat na plataforma; WhatsApp e e-mail só notificam com link</span><small class="act-anexo">Anexo III: JourneyChat + WhatsApp/e-mail com link</small></td><td>M3</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Conversa dentro da plataforma; WhatsApp e e-mail apenas notificam com link, sem receber mensagens do cliente.</td></tr>
+            <tr data-id="M3-03"><td><span class="act-id">M3-03</span> <span class="act-name">Notificações, webhooks Asaas e ShipsGo e fila</span><small class="act-anexo">Anexo III: Notificações, webhooks e fila</small></td><td>M3</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Eventos Asaas e ShipsGo com idempotência, fila e retentativas, e notificações ao usuário.</td></tr>
+            <tr data-id="M3-04"><td><span class="act-id">M3-04</span> <span class="act-name">Memória opaca (CMH-CLI-001) e auditoria dos agentes</span><small class="act-anexo">Anexo III: Memória opaca e auditoria de agentes</small></td><td>M3</td><td><strong>4%</strong></td><td><strong>26,67%</strong></td><td>Histórico dos agentes sem dados identificáveis (referência opaca) e trilha de auditoria das decisões.</td></tr>
+            <tr data-id="M4-01"><td><span class="act-id">M4-01</span> <span class="act-name">Cadastro e assinatura do plano no Asaas (Conecta HUB)</span><small class="act-anexo">Anexo III: 0 Cadastro e assinatura via Asaas</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Plano, qualificação RADAR/trading, assinatura na conta Asaas Conecta HUB e liberação de acesso.</td></tr>
+            <tr data-id="M4-02"><td><span class="act-id">M4-02</span> <span class="act-name">Parcela 1: câmbio do sinal pela trading e PIX de 30% do FOB</span><small class="act-anexo">Anexo III: 1ª parcela Asaas + câmbio da trading</small></td><td>M4</td><td><strong>3%</strong></td><td><strong>20%</strong></td><td>Trading fecha o câmbio antes da cobrança; PIX de 30% do FOB + 1,5% CMH (+ 1,5% da trading, se parceira), antes da produção.</td></tr>
+            <tr data-id="M4-03"><td><span class="act-id">M4-03</span> <span class="act-name">Webhook e split da Parcela 1 (CMH retém 1,5%) e liberação da produção</span><small class="act-anexo">Anexo III: Webhook, split e liberação da produção</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Webhook idempotente, split na conta Conecta Agência (CMH retém 1,5% do FOB), conciliação e liberação da produção.</td></tr>
+            <tr data-id="M4-04"><td><span class="act-id">M4-04</span> <span class="act-name">Parcela 2: câmbio do saldo pela trading e PIX de 70% do FOB</span><small class="act-anexo">Anexo III: 2ª parcela Asaas + câmbio do saldo</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Trading fecha o câmbio do saldo; PIX de 70% do FOB + 3,5% CMH (+ 3,5% da trading, se parceira), após a produção.</td></tr>
+            <tr data-id="M4-05"><td><span class="act-id">M4-05</span> <span class="act-name">Webhook e split da Parcela 2 (CMH retém 3,5%) e liberação do embarque</span><small class="act-anexo">Anexo III: Webhook, split e liberação do embarque</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Webhook idempotente, split (CMH retém 3,5% do FOB), repasses e habilitação do embarque.</td></tr>
+            <tr data-id="M4-06"><td><span class="act-id">M4-06</span> <span class="act-name">Parcela final no Asaas e reconciliação</span><small class="act-anexo">Anexo III: Parcela final Asaas e reconciliação</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Parcela final na chegada (impostos e despesas) e reconciliação de cada parcela até o estado liquidada.</td></tr>
+            <tr data-id="M4-07"><td><span class="act-id">M4-07</span> <span class="act-name">Remuneração da trading parceira e restrição da trading própria ao CNPJ</span><small class="act-anexo">Anexo III: Remuneração por trading e restrição da trading própria ao CNPJ</small></td><td>M4</td><td><strong>2%</strong></td><td><strong>13,33%</strong></td><td>Remuneração de 5% do FOB à trading parceira, fora da base de tributos, e restrição da trading própria ao CNPJ.</td></tr>
+            <tr data-id="M5-01"><td><span class="act-id">M5-01</span> <span class="act-name">Estudo de viabilidade oficial: coleta paralela de custos</span><small class="act-anexo">Anexo III: 5 Coleta paralela de custos</small></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Disparo coordenado da viabilidade oficial e coleta fan-out/gather.</td></tr>
+            <tr data-id="M5-02"><td><span class="act-id">M5-02</span> <span class="act-name">PI e PL: PI do fornecedor (padrão) ou PI EAC com margem por divisor</span><small class="act-anexo">Anexo III: EAC: PI/PL e margem por divisor</small></td><td>M5</td><td><strong>0,8%</strong></td><td><strong>4%</strong></td><td>PI e PL do fornecedor por padrão; PI EAC opcional, com margem por divisor decidida pela gestão CMH. Margem e comissão nunca aparecem para o cliente (diagrama 15).</td></tr>
+            <tr data-id="M5-03"><td><span class="act-id">M5-03</span> <span class="act-name">Hermes: frete firme, rotas e seguro obrigatório</span><small class="act-anexo">Anexo III: Hermes: frete, rotas e seguro</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Frete, CBM, prazo, seguro obrigatório e base logística do CIF.</td></tr>
+            <tr data-id="M5-04"><td><span class="act-id">M5-04</span> <span class="act-name">Atlas e despachante: NCM confirmado, tributos e taxas</span><small class="act-anexo">Anexo III: Atlas/despachante: tributos e taxas</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Impostos por NCM, despesas aduaneiras e retorno fiscal.</td></tr>
+            <tr data-id="M5-05"><td><span class="act-id">M5-05</span> <span class="act-name">Trading: taxa e importador de registro</span></td><td>M5</td><td><strong>0,5%</strong></td><td><strong>2,5%</strong></td><td>Seleção do importador de registro e taxa da operação quando o cliente não possui RADAR.</td></tr>
+            <tr data-id="M5-06"><td><span class="act-id">M5-06</span> <span class="act-name">Certificadora/laboratório</span></td><td>M5</td><td><strong>0,4%</strong></td><td><strong>2%</strong></td><td>Anuências, ensaios e certificado/CCP quando exigidos pelo produto.</td></tr>
+            <tr data-id="M5-07"><td><span class="act-id">M5-07</span> <span class="act-name">Design/marca própria</span></td><td>M5</td><td><strong>0,3%</strong></td><td><strong>1,5%</strong></td><td>Cotação de produto, embalagem e marca própria quando contratada.</td></tr>
+            <tr data-id="M5-08"><td><span class="act-id">M5-08</span> <span class="act-name">Nexus consolida o estudo de viabilidade</span><small class="act-anexo">Anexo III: 6 Nexus consolida o relatório</small></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Relatório final com itens tipados, total, moeda, score e validade.</td></tr>
+            <tr data-id="M5-09"><td><span class="act-id">M5-09</span> <span class="act-name">Cliente aprova o estudo de viabilidade</span><small class="act-anexo">Anexo III: Decisão e aprovação do cliente</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Aceite formal que autoriza a inspeção e a continuidade da operação.</td></tr>
+            <tr data-id="M5-10"><td><span class="act-id">M5-10</span> <span class="act-name">Inspeção de qualidade após a produção (Intmart)</span><small class="act-anexo">Anexo III: 8 Inspeção QC e decisão de qualidade</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Visita da Intmart depois da produção; a aprovação libera a amostra e a reprovação volta para ajuste da produção.</td></tr>
+            <tr data-id="M5-11"><td><span class="act-id">M5-11</span> <span class="act-name">Fornecedor produz</span><small class="act-anexo">Anexo III: 10 Produção</small></td><td>M5</td><td><strong>2%</strong></td><td><strong>10%</strong></td><td>Fabricação liberada, acompanhamento e confirmação de conclusão.</td></tr>
+            <tr data-id="M5-12"><td><span class="act-id">M5-12</span> <span class="act-name">Amostra física antes do embarque</span><small class="act-anexo">Anexo III: 11 Amostras</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Amostra do lote enviada por courier; a aprovação do cliente libera o câmbio do saldo e a Parcela 2. Na segunda reprovação, o Nexus escala para a gestão CMH (diagramas 16 e 17).</td></tr>
+            <tr data-id="M5-13"><td><span class="act-id">M5-13</span> <span class="act-name">Embarque com seguro de carga e BL/AWB</span><small class="act-anexo">Anexo III: 12 Embarque e BL/AWB</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Embarque só com seguro de carga e Parcela 2 paga; emissão do BL ou AWB.</td></tr>
+            <tr data-id="M5-14"><td><span class="act-id">M5-14</span> <span class="act-name">Rastreamento ShipsGo: eventos, ETA e alertas</span><small class="act-anexo">Anexo III: Tracking e eventos ShipsGo</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>ETA, eventos, alertas, polling/webhook e encerramento quando entregue.</td></tr>
+            <tr data-id="M5-15"><td><span class="act-id">M5-15</span> <span class="act-name">Chegada no Brasil e parcela final</span><small class="act-anexo">Anexo III: 13 Chegada e parcela final</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Liquidação na chegada e início da nacionalização.</td></tr>
+            <tr data-id="M5-16"><td><span class="act-id">M5-16</span> <span class="act-name">Catálogo e rascunho da DUIMP; despachante confere e transmite</span><small class="act-anexo">Anexo III: DUIMP e conferência do despachante</small></td><td>M5</td><td><strong>1,5%</strong></td><td><strong>7,5%</strong></td><td>Catálogo, rascunho, conferência e transmissão no Portal Único.</td></tr>
+            <tr data-id="M5-17"><td><span class="act-id">M5-17</span> <span class="act-name">Canal da Receita, exigência e liberação</span><small class="act-anexo">Anexo III: Canal, exigência e liberação aduaneira</small></td><td>M5</td><td><strong>1%</strong></td><td><strong>5%</strong></td><td>Tratamento dos canais verde, amarelo, vermelho e cinza.</td></tr>
+            <tr data-id="M5-18"><td><span class="act-id">M5-18</span> <span class="act-name">Entrega e banco documental</span></td><td>M5</td><td><strong>1,5%</strong></td><td><strong>7,5%</strong></td><td>Entrega, encerramento e documentos versionados vinculados ao processo.</td></tr>
+            <tr data-id="M6-01"><td><span class="act-id">M6-01</span> <span class="act-name">Mobile: telas críticas e navegação</span></td><td>M6</td><td><strong>3%</strong></td><td><strong>30%</strong></td><td>Login, catálogo, simulação, viabilidade, aprovação e pagamentos/status no app, com navegação nativa.</td></tr>
+            <tr data-id="M6-02"><td><span class="act-id">M6-02</span> <span class="act-name">Mobile: documentos, mídia, push e tracking</span></td><td>M6</td><td><strong>3%</strong></td><td><strong>30%</strong></td><td>Upload de documentos e mídia, notificações push, JourneyChat e rastreamento no app.</td></tr>
+            <tr data-id="M6-03"><td><span class="act-id">M6-03</span> <span class="act-name">Mobile: offline, erros e acessibilidade</span></td><td>M6</td><td><strong>2%</strong></td><td><strong>20%</strong></td><td>Tratamento de offline, erros, loading, permissões do dispositivo e acessibilidade básica.</td></tr>
+            <tr data-id="M6-04"><td><span class="act-id">M6-04</span> <span class="act-name">Mobile: builds e pacotes para lojas</span></td><td>M6</td><td><strong>2%</strong></td><td><strong>20%</strong></td><td>Bundle/application ID, ícones, splash, ambientes, builds Android/iOS e metadados de loja.</td></tr>
+            <tr data-id="M7-01"><td><span class="act-id">M7-01</span> <span class="act-name">Portal Trading</span></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Cadastro da empresa, cotação, taxa, RADAR, documentos e status de importador de registro.</td></tr>
+            <tr data-id="M7-02"><td><span class="act-id">M7-02</span> <span class="act-name">Portal Despachante aduaneiro</span></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Conferência fiscal, rascunho e transmissão da DUIMP, exigências, DI e desembaraço.</td></tr>
+            <tr data-id="M7-03"><td><span class="act-id">M7-03</span> <span class="act-name">Portal Transportador / agente de carga</span></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Frete, seguro, rotas, booking, BL/AWB e eventos logísticos.</td></tr>
+            <tr data-id="M7-04"><td><span class="act-id">M7-04</span> <span class="act-name">Portal OCP / certificadora</span></td><td>M7</td><td><strong>1%</strong></td><td><strong>10%</strong></td><td>Anuências, CCP, ensaios, validade e alertas de vencimento de certificados.</td></tr>
+            <tr data-id="M7-05"><td><span class="act-id">M7-05</span> <span class="act-name">Portal Designer / marca própria</span></td><td>M7</td><td><strong>0,5%</strong></td><td><strong>5%</strong></td><td>Cotação, especificações de produto e embalagem e entregas condicionais.</td></tr>
+            <tr data-id="M7-06"><td><span class="act-id">M7-06</span> <span class="act-name">Portal sourcing China (Intmart) em mandarim, com tradução</span><small class="act-anexo">Anexo III: Portal sourcing China em mandarim + tradução</small></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Portal da empresa de sourcing na China (padrão: Intmart), em mandarim, com tradução português ⇄ mandarim e original guardado.</td></tr>
+            <tr data-id="M7-07"><td><span class="act-id">M7-07</span> <span class="act-name">RBAC, moderação, SLA e auditoria dos portais</span></td><td>M7</td><td><strong>1%</strong></td><td><strong>10%</strong></td><td>Convite e aprovação do parceiro, visão só dos processos atribuídos, chat moderado, SLA e auditoria.</td></tr>
+            <tr data-id="M7-08"><td><span class="act-id">M7-08</span> <span class="act-name">Painel admin CMH: parceiros, moderação, tabelas e conciliação</span></td><td>M7</td><td><strong>1,5%</strong></td><td><strong>15%</strong></td><td>Gestão de parceiros, fila de moderação, tabelas fiscais/frete e conciliação financeira.</td></tr>
             <tr><td><strong>Total</strong></td><td><strong>M1–M7</strong></td><td><strong>100%</strong></td><td><strong>100% por milestone</strong></td><td><strong>Contribuição integral do fluxo ao projeto.</strong></td><td><strong>—</strong></td></tr>
           </tbody>
         </table>
-        <div class="callout success"><strong>Regra de leitura:</strong> por exemplo, o quadro “6 Nexus consolida o relatório” representa 2% do projeto total e 10% do M5. A soma dos quadros atribuídos ao M5 representa 20% do projeto e 100% daquele milestone. Decisões e bloqueios do Mermaid foram incorporados ao quadro operacional imediatamente relacionado, evitando dupla contagem.</div>
+        <div class="callout success"><strong>Regra de leitura:</strong> por exemplo, a atividade “M5-08 · 6 Nexus consolida o relatório” representa 2% do projeto total e 10% do M5. A soma das atividades do M5 representa 20% do projeto e 100% daquele milestone. Decisões e bloqueios do Mermaid abrem a atividade operacional imediatamente relacionada, evitando dupla contagem.</div>
         <h3>Interpretação da tabela</h3>
         <ul>
           <li>O percentual de um milestone só deve ser considerado cumprido quando seus entregáveis e critérios de aceite forem demonstrados.</li>
@@ -799,8 +856,8 @@ flowchart TD
     </div>
 
     <div class="dashboard-card" id="github-monitor-card">
-      <h2>Monitor de desenvolvimento GitHub alinhado ao Manual CMH v2.0</h2>
-      <p class="lead">O painel cruza commits, pull requests e execuções de CI com os módulos técnicos do manual. A evidência encontrada <strong>não marca automaticamente o aceite</strong>; ela mostra cobertura de código para orientar revisão e atualização dos switches do roadmap.</p>
+      <h2>Monitor GitHub: PRs por atividade do Anexo III</h2>
+      <p class="lead">Cada PR é ligada às atividades pelos IDs escritos no título ou na descrição (por exemplo <code>M1-02 - Auth, RBAC e consentimento LGPD</code> e <code>Atividades: M1-02, M1-03</code>). Uma PR pode citar várias atividades. O vínculo é evidência para revisão e <strong>não marca o aceite</strong>: a homologação continua nos switches, com credencial.</p>
       <div class="manual-note"><strong>Escopo monitorado:</strong> segurança/tenancy, contrato e validação, catálogo e custo DDP, agentes Nexus/Dragon/Atlas/Hermes, billing Asaas, rastreamento e certificados, DUIMP/Portal Único, mobile e portais de parceiros. O manual define a regra; o GitHub fornece a evidência técnica.</div>
       <div class="github-config">
         <label>Repositório GitHub<input id="github-repo" value="conecta-market-hub-org/CMH" placeholder="organização/repositório" autocomplete="off"></label>
@@ -810,41 +867,122 @@ flowchart TD
       </div>
       <p id="github-status" class="github-status">Informe o repositório e clique em “Atualizar GitHub”. O token fica apenas na memória desta página.</p>
       <div class="github-monitor-grid">
-        <div class="github-kpi"><span>Cobertura do manual</span><strong id="github-coverage">—</strong><small>módulos com evidência em commits/PRs</small></div>
-        <div class="github-kpi"><span>Alinhamento ponderado</span><strong id="github-alignment">—</strong><small>peso técnico do manual identificado</small></div>
+        <div class="github-kpi"><span>Atividades com PR</span><strong id="github-coverage">—</strong><small>das 54, citadas por ID em alguma PR</small></div>
+        <div class="github-kpi"><span>PRs sem ID válido</span><strong id="github-alignment">—</strong><small>não entram em nenhuma atividade</small></div>
         <div class="github-kpi"><span>PRs mesclados</span><strong id="github-merged-prs">—</strong><small>taxa de merge entre PRs fechados</small></div>
         <div class="github-kpi"><span>CI aprovado</span><strong id="github-ci">—</strong><small>execuções concluídas com sucesso</small></div>
       </div>
+      <h3>PRs por atividade</h3>
+      <div class="github-table-wrap"><table class="github-table"><thead><tr><th>Atividade</th><th>PRs que citam o ID</th><th>Homologação</th></tr></thead><tbody id="github-activity-body"><tr><td colspan="3">Nenhum repositório consultado.</td></tr></tbody></table></div>
+      <h3>PRs a corrigir</h3>
+      <p class="github-status">PRs sem ID de atividade, ou com ID que não existe no Anexo III. Corrija o título ou a descrição da PR para que ela conte.</p>
+      <div class="github-table-wrap"><table class="github-table"><thead><tr><th>PR</th><th>Título</th><th>Motivo</th></tr></thead><tbody id="github-unlinked-body"><tr><td colspan="3">Nenhum repositório consultado.</td></tr></tbody></table></div>
+      <h3>Sinal auxiliar: palavras-chave do manual</h3>
+      <p class="github-status">Busca por termos técnicos em commits e PRs. Só orienta a revisão; não vincula PR a atividade.</p>
       <div class="github-table-wrap"><table class="github-table"><thead><tr><th>Módulo do manual</th><th>Milestone</th><th>Peso técnico</th><th>Evidência GitHub</th><th>Status de acompanhamento</th></tr></thead><tbody id="github-module-body"><tr><td colspan="5">Nenhum repositório consultado.</td></tr></tbody></table></div>
     </div>
   </section>
 
 
   <script>
+    // Sessão do Control: endereço da fonte central, usuário e token. O endereço
+    // não fica no código; o administrador entrega os três dados a cada pessoa.
+    window.controlSession = (() => {
+      const KEY = 'conecta-control-session';
+      const read = (store) => { try { return JSON.parse(store.getItem(KEY) || 'null'); } catch (error) { return null; } };
+      return {
+        get: () => read(sessionStorage) || read(localStorage),
+        save: (session, remember) => {
+          try {
+            sessionStorage.setItem(KEY, JSON.stringify(session));
+            if (remember) localStorage.setItem(KEY, JSON.stringify(session));
+            else localStorage.removeItem(KEY);
+            localStorage.setItem('conecta-control-endpoint', session.endpoint);
+          } catch (error) { /* sem armazenamento: a sessão vale só nesta aba */ }
+        },
+        clear: () => { try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); } catch (error) { /* sem armazenamento */ } }
+      };
+    })();
+    // POST com text/plain não dispara o preflight de CORS, que o Apps Script não atende.
+    window.controlApi = async (action, payload = {}, session = window.controlSession.get()) => {
+      if (!session || !session.endpoint) throw new Error('Fonte central não configurada.');
+      const response = await fetch(session.endpoint, {
+        method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ ...payload, action, user: session.user, token: session.token })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    };
     (() => {
       const body = document.body;
       const form = document.getElementById('login-form');
       const message = document.getElementById('login-message');
       const loginScreen = document.getElementById('login-screen');
+      const endpointInput = document.getElementById('login-endpoint');
+      const userInput = document.getElementById('login-email');
+      const submit = form.querySelector('.login-submit');
       const setAuthenticated = () => { body.classList.add('authenticated'); loginScreen.setAttribute('hidden', ''); };
-      if (sessionStorage.getItem('conecta-market-login') === 'authenticated') setAuthenticated();
-      form.addEventListener('submit', (event) => {
+      window.controlShowLogin = (text = '') => {
+        window.controlSession.clear();
+        body.classList.remove('authenticated');
+        loginScreen.removeAttribute('hidden');
+        message.textContent = text;
+      };
+      try { endpointInput.value = localStorage.getItem('conecta-control-endpoint') || ''; } catch (error) { /* sem armazenamento */ }
+      const existing = window.controlSession.get();
+      if (existing) { userInput.value = existing.user; setAuthenticated(); }
+      form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
-        if (!email || !password) { message.textContent = 'Informe o usuário e a senha para continuar.'; return; }
-        sessionStorage.setItem('conecta-market-login', 'authenticated');
-        setAuthenticated();
+        const endpoint = endpointInput.value.trim();
+        const user = userInput.value.trim().toLowerCase();
+        const token = document.getElementById('login-password').value.trim();
+        if (!endpoint || !user || !token) { message.textContent = 'Informe a fonte central, o usuário e o token.'; return; }
+        try { if (!/^https?:$/.test(new URL(endpoint).protocol)) throw new Error(); } catch (error) { message.textContent = 'O endereço da fonte central não é uma URL válida.'; return; }
+        message.textContent = 'Conferindo o acesso…';
+        submit.disabled = true;
+        try {
+          const result = await window.controlApi('whoami', {}, { endpoint, user, token });
+          if (!result.ok) { message.textContent = result.error || 'Acesso negado.'; return; }
+          const session = { endpoint, user, token, name: result.user.name, canMark: result.user.canMark };
+          window.controlSession.save(session, document.getElementById('login-remember').checked);
+          document.getElementById('login-password').value = '';
+          message.textContent = '';
+          setAuthenticated();
+          document.dispatchEvent(new CustomEvent('control:login', { detail: session }));
+        } catch (error) {
+          message.textContent = 'Não foi possível falar com a fonte central. Confira o endereço e a conexão.';
+        } finally {
+          submit.disabled = false;
+        }
       });
-      document.getElementById('login-forgot').addEventListener('click', (event) => { event.preventDefault(); message.textContent = 'A recuperação de senha será conectada ao provedor de autenticação.'; });
+      document.getElementById('login-forgot').addEventListener('click', (event) => { event.preventDefault(); message.textContent = 'Peça um novo token ao administrador do Control. Quando ele gera outro, o anterior deixa de valer.'; });
     })();
   </script>
 
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, securityLevel: 'strict', theme: 'base', themeVariables: { primaryColor: '#eef7ff', primaryTextColor: '#102a43', primaryBorderColor: '#1677c8', lineColor: '#627d98', secondaryColor: '#f0ebff', tertiaryColor: '#fff8eb' } });
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base', themeVariables: { primaryColor: '#eef7ff', primaryTextColor: '#102a43', primaryBorderColor: '#1677c8', lineColor: '#627d98', secondaryColor: '#f0ebff', tertiaryColor: '#fff8eb' } });
+    // O fluxograma só é desenhado com a página visível: desenhado por trás da
+    // tela de login, o Mermaid mede os textos com tamanho zero e falha
+    // ("Syntax error in text" abaixo do diagrama).
+    let diagramRendered = false;
+    const diagramElement = document.querySelector('.mermaid');
+    const diagramSource = diagramElement.textContent;
+    const renderDiagram = async () => {
+      if (diagramRendered || !document.body.classList.contains('authenticated')) return;
+      diagramRendered = true;
+      let failed = false;
+      try { await mermaid.run({ nodes: [diagramElement] }); } catch (error) { failed = true; }
+      // Se a página foi escondida no meio do desenho (sessão recusada), refaz no próximo login.
+      if (failed || diagramElement.querySelector('.error-icon')) {
+        diagramElement.removeAttribute('data-processed');
+        diagramElement.textContent = diagramSource;
+        diagramRendered = false;
+      }
+    };
+    renderDiagram();
+    document.addEventListener('control:login', renderDiagram);
 
-    const CENTRAL_HISTORY_API = 'https://script.google.com/macros/s/AKfycbzxKh2QzJVh5uURcbvY5DyZt717X5ZzSeXwtsD91JKbYjzBvuhtyv7DS5BeS9dqSPKDaA/exec';
 
     let diagramZoom = 1;
     const zoomLevel = document.getElementById('zoom-level');
@@ -913,13 +1051,17 @@ flowchart TD
     diagramWrap.addEventListener('pointercancel', stopPanning);
 
     const normalizeActivityText = (value) => value.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9%]+/g, ' ').trim();
-    const activityRows = [...document.querySelectorAll('#fluxo-peso-table tbody tr')]
+    // Cada linha é uma atividade do Anexo III. O ID (M1-01…M7-08) é a chave
+    // estável usada nos switches, no localStorage e no histórico.
+    const activityRows = [...document.querySelectorAll('#fluxo-peso-table tbody tr[data-id]')]
       .map((row) => {
         const cells = [...row.querySelectorAll('td')].map((cell) => cell.textContent.trim());
-        return cells.length >= 5 && !cells[0].toLowerCase().startsWith('total') ? {
-          label: cells[0], milestone: cells[1], projectPct: cells[2], milestonePct: cells[3], description: cells[4]
-        } : null;
-      }).filter(Boolean);
+        return {
+          label: row.dataset.id, name: row.querySelector('.act-name')?.textContent.trim() || cells[0],
+          milestone: cells[1], projectPct: cells[2], milestonePct: cells[3], description: cells[4]
+        };
+      });
+    const activityDisplay = (row) => `${row.label} · ${row.name}`;
     const milestoneWeights = { M1: 15, M2: 15, M3: 15, M4: 15, M5: 20, M6: 10, M7: 10 };
     const milestoneNames = {
       M1: 'Fundação e Segurança', M2: 'Engine de Catálogo e DDP', M3: 'Agentes IA e Omnichannel',
@@ -939,6 +1081,26 @@ flowchart TD
       { id:'mobile', label:'React Native e publicação mobile', milestone:'M6', weight:8, keys:['react native','mobile','expo','android','ios','store','app'] },
       { id:'partners', label:'Portais e acesso de parceiros', milestone:'M7', weight:15, keys:['partner','portal','trading','broker','ocp','designer','processaccessgrant','moderation','moderacao','chat'] }
     ];
+    // Vínculo oficial PR → atividade: IDs M1-01…M7-08 no título ou na descrição.
+    let githubLinks = null;
+    let lastPrLinks = null;
+    const activityIdsInText = (text) => [...new Set([...String(text || '').matchAll(/\bM(\d)-(\d{2})\b/gi)].map((m) => `M${m[1]}-${m[2]}`))];
+    const prState = (pr) => (pr.merged_at ? 'mesclada' : pr.state === 'open' ? 'aberta' : 'fechada');
+    const prBadge = (pr) => `<a class="pr-badge pr-${pr.state}" href="${escapeHtml(pr.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(pr.title)}">#${pr.number} ${pr.state}</a>`;
+    const renderPrLinks = () => {
+      if (!lastPrLinks) return;
+      const linked = activityRows.filter((row) => githubLinks[row.label]);
+      document.getElementById('github-activity-body').innerHTML = linked.map((row) => `<tr><td>${escapeHtml(activityDisplay(row))}</td><td>${githubLinks[row.label].map(prBadge).join('')}</td><td>${completedActivities.has(row.label) ? '<span class="evidence-ok">Homologada</span>' : '<span class="evidence-pending">Pendente</span>'}</td></tr>`).join('')
+        || '<tr><td colspan="3">Nenhuma PR cita um ID de atividade.</td></tr>';
+      const toFix = lastPrLinks.filter((pr) => !pr.ids.length || pr.invalid.length);
+      document.getElementById('github-unlinked-body').innerHTML = toFix.map((pr) => `<tr><td>${prBadge(pr)}</td><td>${escapeHtml(pr.title)}</td><td>${pr.invalid.length ? `ID inexistente: ${escapeHtml(pr.invalid.join(', '))}` : 'Sem ID no título ou na descrição'}</td></tr>`).join('')
+        || '<tr><td colspan="3">Todas as PRs citam atividades válidas.</td></tr>';
+    };
+    const prLinksText = (id) => {
+      if (!githubLinks) return 'Atualize o monitor GitHub na aba Dashboard para ver.';
+      const list = githubLinks[id] || [];
+      return list.length ? list.map((pr) => `#${pr.number} (${pr.state})`).join(', ') : 'Nenhuma PR cita este ID.';
+    };
     const githubText = (item) => `${item.title || ''} ${item.body || ''} ${item.commit || ''} ${item.message || ''} ${item.path || ''}`.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const moduleMatches = (text) => manualModules.filter((module) => module.keys.some((key) => text.includes(key.normalize('NFD').replace(/[\u0300-\u036f]/g,''))));
     const githubFetch = async (path, token) => {
@@ -974,24 +1136,28 @@ flowchart TD
         const prs = prsResult.status === 'fulfilled' ? prsResult.value : [];
         const commits = commitsResult.status === 'fulfilled' ? commitsResult.value : [];
         const runs = runsResult.status === 'fulfilled' ? (runsResult.value.workflow_runs || []) : [];
+        lastPrLinks = prs.map((pr) => {
+          const found = activityIdsInText(`${pr.title || ''}\n${pr.body || ''}`);
+          return { number: pr.number, title: pr.title || '', url: pr.html_url || `https://github.com/${repo}/pull/${pr.number}`, state: prState(pr), ids: found.filter((id) => activityIds.has(id)), invalid: found.filter((id) => !activityIds.has(id)) };
+        });
+        githubLinks = {};
+        lastPrLinks.forEach((pr) => pr.ids.forEach((id) => { (githubLinks[id] = githubLinks[id] || []).push(pr); }));
+        renderPrLinks();
         const evidence = Object.fromEntries(manualModules.map((module) => [module.id, 0]));
         [...prs.map((pr) => ({ title:pr.title, body:pr.body, path:pr.head?.ref })), ...commits.map((commit) => ({ message:commit.commit?.message, body:commit.commit?.body }))].forEach((item) => moduleMatches(githubText(item)).forEach((module) => evidence[module.id]++));
-        const matched = manualModules.filter((module) => evidence[module.id] > 0);
-        const coverage = manualModules.length ? (matched.length / manualModules.length) * 100 : 0;
-        const alignment = manualModules.reduce((sum, module) => sum + (evidence[module.id] ? module.weight : 0), 0);
         const closedPrs = prs.filter((pr) => pr.state === 'closed');
         const mergedPrs = prs.filter((pr) => pr.merged_at);
         const mergeRate = closedPrs.length ? (mergedPrs.length / closedPrs.length) * 100 : 0;
         const completedRuns = runs.filter((run) => run.status === 'completed');
         const successfulRuns = completedRuns.filter((run) => run.conclusion === 'success');
         const ciRate = completedRuns.length ? (successfulRuns.length / completedRuns.length) * 100 : null;
-        document.getElementById('github-coverage').textContent = `${coverage.toFixed(0)}%`;
-        document.getElementById('github-alignment').textContent = `${alignment.toFixed(0)}%`;
+        document.getElementById('github-coverage').textContent = `${Object.keys(githubLinks).length}/${activityRows.length}`;
+        document.getElementById('github-alignment').textContent = `${lastPrLinks.filter((pr) => !pr.ids.length).length}/${lastPrLinks.length}`;
         document.getElementById('github-merged-prs').textContent = `${mergedPrs.length}/${closedPrs.length || prs.length} (${mergeRate.toFixed(0)}%)`;
         document.getElementById('github-ci').textContent = ciRate === null ? 'n/d' : `${ciRate.toFixed(0)}%`;
         renderGithubModules(evidence);
         const privateHint = prsResult.status === 'rejected' || commitsResult.status === 'rejected' ? ' Parte dos dados exige token de leitura.' : '';
-        status.textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}: ${commits.length} commits, ${prs.length} PRs e ${runs.length} execuções de CI.${privateHint}`;
+        status.textContent = `Atualizado em ${new Date().toLocaleString('pt-BR')}: ${prs.length} PRs (${Object.keys(githubLinks).length} atividades citadas), ${commits.length} commits e ${runs.length} execuções de CI.${privateHint}`;
       } catch (error) {
         document.getElementById('github-coverage').textContent = '—'; document.getElementById('github-alignment').textContent = '—'; document.getElementById('github-merged-prs').textContent = '—'; document.getElementById('github-ci').textContent = '—';
         status.textContent = error.message || 'Falha ao consultar o GitHub.';
@@ -1008,96 +1174,247 @@ flowchart TD
       }
       return new Date();
     };
+    // Estado oficial: vem da fonte central (Apps Script + planilha), com quem
+    // marcou e quando. O navegador guarda só uma cópia para exibir se a fonte
+    // cair; nessa situação nada pode ser marcado.
     let completedActivities = new Set();
-    try { completedActivities = new Set(JSON.parse(localStorage.getItem('conecta-market-completed-activities') || '[]')); } catch (error) { completedActivities = new Set(); }
-    // O histórico temporal é centralizado no Google Sheets. O localStorage guarda
-    // apenas o estado dos switches; ele não é fonte de dados para a linha do tempo.
+    let activityMeta = {};
+    let centralReady = false;
+    let serverProgress = null;
+    const currentSession = () => window.controlSession && window.controlSession.get();
+    const canMark = () => Boolean(centralReady && currentSession() && currentSession().canMark);
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const formatDateTime = (iso) => { const date = new Date(iso); return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); };
+    const formatPct = (value) => `${Number(value).toFixed(2).replace('.', ',')}%`;
+    const setStatus = (text) => { const status = document.getElementById('progress-save-status'); if (status) status.textContent = text; };
+    const STATE_CACHE = 'conecta-control-last-state';
+    // Marcações feitas antes da fonte central ficavam só neste navegador.
+    let localMarks = new Set();
+    try { localMarks = new Set(JSON.parse(localStorage.getItem('conecta-market-completed-activities') || '[]')); } catch (error) { localMarks = new Set(); }
+    // Migração única da matriz antiga (32 quadros) para os IDs do Anexo III.
+    // Linhas antigas equivalentes a uma atividade viram o ID correspondente;
+    // blocos agregados (M1, M3, M6 e M7 inteiros) não são convertidos, porque
+    // cada atividade precisa de aceite próprio. O estado anterior fica salvo.
+    const legacyActivityIds = {
+      "1 Produto: catálogo ou upload": 'M2-01',
+      "Dragon: sourcing individual ou lote": 'M2-02',
+      "2 Atlas: NCM e restrições": 'M2-04',
+      "3 Seleção de itens": 'M2-05',
+      "4 Simulação DDP preliminar": 'M2-06',
+      "0 Cadastro e assinatura": 'M4-01',
+      "9 1ª parcela via Wise": 'M4-02',
+      "Webhook e split da 1ª parcela": 'M4-03',
+      "12 2ª parcela via Wise": 'M4-04',
+      "Webhook e split da 2ª parcela": 'M4-05',
+      "5 Coleta paralela de custos": 'M5-01',
+      "EAC: PI/PL e margem por divisor": 'M5-02',
+      "Hermes: frete, rotas e seguro": 'M5-03',
+      "Atlas/despachante: tributos e taxas": 'M5-04',
+      "Trade Brasil: taxa e importador de registro": 'M5-05',
+      "Certificadora/laboratório": 'M5-06',
+      "Design/marca própria": 'M5-07',
+      "6 Nexus consolida o relatório": 'M5-08',
+      "Decisão e aprovação do cliente": 'M5-09',
+      "8 Inspeção QC e decisão de qualidade": 'M5-10',
+      "10 Produção": 'M5-11',
+      "11 Amostras": 'M5-12',
+      "12 Embarque e BL/AWB": 'M5-13',
+      "Tracking e eventos Shipgo/ShipsGo": 'M5-14',
+      "13 Chegada e parcela final": 'M5-15',
+      "DUIMP e conferência do despachante": 'M5-16',
+      "Canal, exigência e liberação aduaneira": 'M5-17',
+      "Entrega e banco documental": 'M5-18'
+    };
+    const activityIds = new Set(activityRows.map((row) => row.label));
+    const unknownStored = [...localMarks].filter((label) => !activityIds.has(label));
+    if (unknownStored.length) {
+      const unmapped = unknownStored.filter((label) => !legacyActivityIds[label]);
+      localMarks = new Set([...localMarks].map((label) => legacyActivityIds[label] || label).filter((label) => activityIds.has(label)));
+      try {
+        if (!localStorage.getItem('conecta-market-completed-activities-v32-backup')) localStorage.setItem('conecta-market-completed-activities-v32-backup', localStorage.getItem('conecta-market-completed-activities') || '[]');
+        localStorage.setItem('conecta-market-completed-activities', JSON.stringify([...localMarks]));
+        if (unmapped.length) localStorage.setItem('conecta-market-unmapped-activities', JSON.stringify(unmapped));
+      } catch (error) { /* migração segue apenas em memória */ }
+    }
     let progressHistory = [];
     try { localStorage.removeItem('conecta-market-progress-history'); } catch (error) { /* limpeza opcional */ }
     const calculateTotalProgress = () => activityRows.reduce((sum, row) => sum + (completedActivities.has(row.label) ? percentNumber(row.projectPct) : 0), 0);
-    const recordProgressHistory = (activity = null, action = 'Estado salvo manualmente') => {
-      const now = new Date();
-      const point = {
-        date: now.toISOString().slice(0, 10), timestamp: now.toISOString(),
-        progress: Number(calculateTotalProgress().toFixed(2)),
-        completed: activityRows.filter((row) => completedActivities.has(row.label)).length,
-        activity: activity ? activity.label : 'Estado geral do projeto',
-        milestone: activity ? activity.milestone : 'M1–M7',
-        description: activity ? activity.description : 'Registro manual do estado acumulado das atividades.',
-        action
+    const rowById = (id) => activityRows.find((row) => row.label === id);
+    const historyPoint = (event) => {
+      const row = rowById(event.activity);
+      return {
+        ...event,
+        activity: row ? activityDisplay(row) : event.activity,
+        milestone: row ? row.milestone : 'M1–M7',
+        action: event.action === 'concluida' ? 'Atividade concluída' : event.action === 'reaberta' ? 'Atividade reaberta' : event.action,
+        description: event.note || (row ? row.description : ''),
+        by: event.name || event.user
       };
-      syncProgressEvent(point);
     };
-    const syncProgressEvent = async (point) => {
+    // Pontos da versão anterior (sem identificação de quem registrou).
+    const legacyPoint = (item) => ({
+      ...item,
+      progress: Number(item.progressPct ?? item.progress) || 0,
+      completed: Number(item.completedCount ?? item.completed) || 0,
+      timestamp: item.timestamp || new Date(`${item.date}T12:00:00`).toISOString(),
+      action: item.eventAction || item.action,
+      by: 'registro anterior, sem identificação'
+    });
+    const homologationText = (id) => {
+      const meta = activityMeta[id];
+      if (!meta) return 'Não homologada.';
+      return `${meta.done ? 'Concluída' : 'Reaberta'} por ${meta.name || meta.by} em ${formatDateTime(meta.at)}.`;
+    };
+    const refreshSwitches = () => {
+      const session = currentSession();
+      document.querySelectorAll('#fluxo-peso-table tr[data-id]').forEach((tr) => {
+        const id = tr.dataset.id;
+        const input = tr.querySelector('.activity-switch input');
+        if (!input) return;
+        input.checked = completedActivities.has(id);
+        input.disabled = !canMark() || tr.dataset.pending === '1';
+        const meta = activityMeta[id];
+        const line = tr.querySelector('.act-meta');
+        if (line) line.textContent = meta ? `${meta.done ? '✓' : '↶'} ${meta.name || meta.by} · ${formatDateTime(meta.at)}` : '';
+        const label = tr.querySelector('.activity-switch');
+        if (label) label.title = !centralReady ? 'Fonte central indisponível: marcações bloqueadas.' : session && !session.canMark ? 'Seu acesso é somente leitura.' : homologationText(id);
+      });
+      const info = document.getElementById('session-info');
+      if (info) info.textContent = session ? `${session.name || session.user} · ${session.canMark ? 'pode homologar' : 'somente leitura'}` : '';
+    };
+    const cacheState = (data) => {
+      try { localStorage.setItem(STATE_CACHE, JSON.stringify({ savedAt: new Date().toISOString(), data: { state: data.state, progress: data.progress, history: data.history, legacy: data.legacy } })); } catch (error) { /* cópia opcional */ }
+    };
+    const applyCentralState = (data, cached = false) => {
+      activityMeta = data.state || {};
+      completedActivities = new Set(Object.keys(activityMeta).filter((id) => activityMeta[id].done && activityIds.has(id)));
+      serverProgress = typeof data.progress === 'number' ? data.progress : null;
+      const legacy = Array.isArray(data.legacy) ? data.legacy.filter((item) => item.source !== 'final-api-test').map(legacyPoint) : [];
+      progressHistory = [...legacy, ...(data.history || []).map(historyPoint)]
+        .sort((a, b) => getHistoryDate(a) - getHistoryDate(b)).slice(-90);
+      centralReady = !cached;
+      refreshSwitches();
+      renderProgressSummary();
+      renderLocalMarksNote();
+      renderPrLinks();
+    };
+    const checkWeights = () => {
+      const local = calculateTotalProgress();
+      if (serverProgress !== null && Math.abs(local - serverProgress) > 0.01) setStatus(`Atenção: a fonte central calcula ${formatPct(serverProgress)} e esta página ${formatPct(local)}. Os pesos estão diferentes; vale o da fonte central.`);
+    };
+    const handleAuthFailure = (data) => {
+      if (data && data.code === 'auth' && window.controlShowLogin) {
+        window.controlShowLogin('Seu acesso não é mais aceito pela fonte central. Entre de novo ou peça um novo token.');
+        return true;
+      }
+      return false;
+    };
+    const loadCentralState = async () => {
+      if (!currentSession()) { setStatus('Entre com usuário e token para ver a homologação.'); return; }
+      setStatus('Lendo a fonte central…');
       try {
-        const params = new URLSearchParams({
-          action: 'append', timestamp: point.timestamp, date: point.date,
-          activity: point.activity, milestone: point.milestone, eventAction: point.action,
-          progressPct: String(point.progress), completedCount: String(point.completed),
-          description: point.description, source: 'conecta-market-html', userKey: ''
-        });
-        // Apps Script redireciona POSTs para googleusercontent.com; no navegador
-        // isso pode bloquear o CORS. O endpoint GET grava de forma idempotente
-        // por evento e permite confirmação direta da resposta JSON.
-        const response = await fetch(`${CENTRAL_HISTORY_API}?${params.toString()}`, { mode: 'cors', redirect: 'follow' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const result = await response.json();
-        if (!result.ok || !result.saved) throw new Error(result.error || 'Gravação não confirmada');
-        // O ponto só entra no gráfico depois de reler a fonte central.
-        await loadCentralHistory();
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Confirmado no Google Sheets às ${new Date().toLocaleTimeString('pt-BR')}.`;
+        const data = await window.controlApi('state');
+        if (!data.ok) { if (handleAuthFailure(data)) return; throw new Error(data.error || 'resposta inválida'); }
+        applyCentralState(data);
+        cacheState(data);
+        setStatus(`Fonte central lida às ${new Date().toLocaleTimeString('pt-BR')}.`);
+        checkWeights();
       } catch (error) {
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Não foi possível confirmar no Google Sheets; o ponto não foi exibido.`;
+        let cache = null;
+        try { cache = JSON.parse(localStorage.getItem(STATE_CACHE) || 'null'); } catch (cacheError) { cache = null; }
+        if (cache && cache.data) {
+          applyCentralState(cache.data, true);
+          setStatus(`Fonte central indisponível. Exibindo a cópia de ${formatDateTime(cache.savedAt)}; marcações bloqueadas.`);
+        } else {
+          centralReady = false;
+          refreshSwitches();
+          setStatus('Fonte central indisponível; marcações bloqueadas.');
+        }
       }
     };
-    const loadCentralHistory = async () => {
+    const setPending = (id, pending) => {
+      const tr = document.querySelector(`#fluxo-peso-table tr[data-id="${id}"]`);
+      if (tr) tr.dataset.pending = pending ? '1' : '';
+      refreshSwitches();
+    };
+    const markActivity = async (activity, done, note = '') => {
+      if (!canMark()) {
+        const session = currentSession();
+        setStatus(session && !session.canMark ? 'Seu acesso é somente leitura.' : 'Fonte central indisponível; marcações bloqueadas.');
+        refreshSwitches();
+        return false;
+      }
+      setPending(activity.label, true);
+      setStatus(`Registrando ${activity.label}…`);
       try {
-        const response = await fetch(`${CENTRAL_HISTORY_API}?limit=90`, { mode: 'cors', redirect: 'follow' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json();
-        const remote = Array.isArray(payload.history) ? payload.history
-          .filter((item) => item.source !== 'final-api-test')
-          .map((item) => ({
-            ...item,
-            progress: Number(item.progressPct ?? item.progress) || 0,
-            completed: Number(item.completedCount ?? item.completed) || 0,
-            timestamp: item.timestamp || new Date(`${item.date}T12:00:00`).toISOString()
-          })) : [];
-        progressHistory = remote.slice(-90);
-        renderDashboard();
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Histórico centralizado carregado do Google Sheets às ${new Date().toLocaleTimeString('pt-BR')}.`;
+        const data = await window.controlApi('mark', { activityId: activity.label, done, note });
+        if (!data.ok) { if (handleAuthFailure(data)) return false; throw new Error(data.error || 'resposta inválida'); }
+        applyCentralState(data);
+        cacheState(data);
+        const meta = activityMeta[activity.label];
+        setStatus(data.unchanged
+          ? `${activity.label} já estava ${done ? 'concluída' : 'pendente'} na fonte central.`
+          : `${activity.label} ${done ? 'concluída' : 'reaberta'} por ${meta ? meta.name : data.user.name} às ${new Date().toLocaleTimeString('pt-BR')}.`);
+        checkWeights();
+        return true;
       } catch (error) {
-        const status = document.getElementById('progress-save-status');
-        progressHistory = [];
-        renderDashboard();
-        if (status) status.textContent = 'Google Sheets indisponível; a linha cronológica permanece vazia.';
+        setStatus(`${activity.label} não foi registrada: ${error.message}`);
+        return false;
+      } finally {
+        setPending(activity.label, false);
       }
     };
-    const saveCompletedActivities = (activity = null, action = 'Estado salvo manualmente') => {
+    let registeringLocalMarks = false;
+    const forgetLocalMarks = (includeUnmapped) => {
+      localMarks = new Set();
       try {
-        localStorage.setItem('conecta-market-completed-activities', JSON.stringify([...completedActivities]));
-        recordProgressHistory(activity, action);
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = `Salvo no navegador às ${new Date().toLocaleTimeString('pt-BR')}.`;
-      } catch (error) {
-        const status = document.getElementById('progress-save-status');
-        if (status) status.textContent = 'Não foi possível salvar neste navegador.';
+        localStorage.removeItem('conecta-market-completed-activities');
+        if (includeUnmapped) localStorage.removeItem('conecta-market-unmapped-activities');
+      } catch (error) { /* sem armazenamento */ }
+    };
+    const renderLocalMarksNote = () => {
+      const note = document.getElementById('migration-note');
+      if (!note || registeringLocalMarks) return;
+      let unmapped = [];
+      try { unmapped = JSON.parse(localStorage.getItem('conecta-market-unmapped-activities') || '[]'); } catch (error) { unmapped = []; }
+      const pending = [...localMarks].filter((id) => !completedActivities.has(id) && rowById(id));
+      if (!centralReady || (!pending.length && !unmapped.length)) { note.hidden = true; return; }
+      let html = '<strong>Marcações antigas deste navegador:</strong> ficavam só neste computador e não contam no progresso oficial.';
+      if (pending.length) {
+        html += `<ul>${pending.map((id) => `<li>${escapeHtml(activityDisplay(rowById(id)))}</li>`).join('')}</ul>`;
+        html += canMark()
+          ? `<button type="button" class="zoom-btn" id="local-marks-register">Registrar ${pending.length === 1 ? 'esta marcação' : `estas ${pending.length} marcações`} em meu nome</button> `
+          : '<p>Peça a quem pode homologar para registrá-las.</p>';
       }
+      if (unmapped.length) html += `<p>Blocos da matriz antiga que precisam ser revistos atividade por atividade:</p><ul>${unmapped.map((label) => `<li>${escapeHtml(label)}</li>`).join('')}</ul>`;
+      html += '<button type="button" class="zoom-btn" id="local-marks-dismiss">Descartar marcações antigas</button>';
+      note.innerHTML = html;
+      note.hidden = false;
+      const register = document.getElementById('local-marks-register');
+      if (register) register.addEventListener('click', async () => {
+        registeringLocalMarks = true;
+        register.disabled = true;
+        let failed = 0;
+        for (const id of pending) {
+          if (!(await markActivity(rowById(id), true, 'Registrada a partir de marcação antiga do navegador.'))) failed++;
+        }
+        registeringLocalMarks = false;
+        if (!failed) forgetLocalMarks(false);
+        renderLocalMarksNote();
+      });
+      document.getElementById('local-marks-dismiss').addEventListener('click', () => { forgetLocalMarks(true); note.hidden = true; });
     };
     const renderProgressReport = () => {
       const total = activityRows.reduce((sum, row) => sum + (completedActivities.has(row.label) ? percentNumber(row.projectPct) : 0), 0);
       document.getElementById('progress-report-date').textContent = `Atualizado em ${new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeStyle: 'short' }).format(new Date())}.`;
-      document.getElementById('progress-report-summary').innerHTML = `<p><strong>Progresso acumulado do contrato: ${total.toFixed(2).replace('.', ',')}%</strong></p><p>O relatório considera as atividades marcadas como concluídas no painel lateral e os pesos definidos na matriz do roadmap.</p>`;
+      document.getElementById('progress-report-summary').innerHTML = `<p><strong>Progresso acumulado do contrato: ${total.toFixed(2).replace('.', ',')}%</strong></p><p>O relatório considera as atividades homologadas na fonte central, com o usuário e a data registrados pelo servidor, e os pesos do Anexo III.</p>`;
       document.getElementById('progress-report-milestones').innerHTML = Object.entries(milestoneWeights).map(([id, weight]) => {
         const completed = activityRows.filter((row) => row.milestone === id && completedActivities.has(row.label)).reduce((sum, row) => sum + percentNumber(row.projectPct), 0);
         const within = weight ? Math.min(100, (completed / weight) * 100) : 0;
         const status = within >= 100 ? 'Concluído' : within > 0 ? 'Em andamento' : 'Não iniciado';
         return `<tr><td>${id} — ${milestoneNames[id]}</td><td>${weight}%</td><td>${within.toFixed(0)}%</td><td>${completed.toFixed(2).replace('.', ',')}%</td><td>${status}</td></tr>`;
       }).join('');
-      document.getElementById('progress-report-activities').innerHTML = activityRows.filter((row) => completedActivities.has(row.label)).map((row) => `<tr><td>${row.label}</td><td>${row.milestone}</td><td>${row.projectPct}</td><td>${row.milestonePct}</td><td>${row.description}</td></tr>`).join('') || '<tr><td colspan="5">Nenhuma atividade foi marcada como concluída.</td></tr>';
+      document.getElementById('progress-report-activities').innerHTML = activityRows.filter((row) => completedActivities.has(row.label)).map((row) => `<tr><td>${activityDisplay(row)}</td><td>${row.milestone}</td><td>${row.projectPct}</td><td>${row.milestonePct}</td><td>${escapeHtml(activityMeta[row.label] ? `${activityMeta[row.label].name} em ${formatDateTime(activityMeta[row.label].at)}` : '—')}</td><td>${row.description}</td></tr>`).join('') || '<tr><td colspan="6">Nenhuma atividade foi homologada.</td></tr>';
     };
     const renderTimeline = () => {
       const grid = document.getElementById('timeline-grid');
@@ -1172,38 +1489,40 @@ flowchart TD
     const decorateActivityTable = () => {
       const tableRows = [...document.querySelectorAll('#fluxo-peso-table tbody tr')];
       activityRows.forEach((activity) => {
-        const tableRow = tableRows.find((row) => row.querySelector('td')?.textContent.trim() === activity.label);
+        const tableRow = tableRows.find((row) => row.dataset.id === activity.label);
         if (!tableRow || tableRow.querySelector('.activity-switch')) return;
         const cell = document.createElement('td');
         const label = document.createElement('label');
         label.className = 'activity-switch';
-        label.title = `Marcar ${activity.label} como concluída (${activity.projectPct} do projeto)`;
+        label.title = `Marcar ${activityDisplay(activity)} como concluída (${activity.projectPct} do projeto)`;
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.checked = completedActivities.has(activity.label);
-        input.setAttribute('aria-label', `Concluir atividade ${activity.label}`);
+        input.setAttribute('aria-label', `Concluir atividade ${activityDisplay(activity)}`);
         const slider = document.createElement('span');
         slider.className = 'activity-slider';
-        input.addEventListener('change', () => {
-          if (input.checked) completedActivities.add(activity.label);
-          else completedActivities.delete(activity.label);
-          saveCompletedActivities(activity, input.checked ? 'Atividade concluída' : 'Atividade reaberta');
-          renderProgressSummary();
-          if (currentActivity && currentActivity.label === activity.label) {
-            completeToggle.classList.toggle('completed', input.checked);
-            completeToggle.textContent = input.checked ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
-          }
+        input.disabled = true;
+        input.addEventListener('change', async () => {
+          const wanted = input.checked;
+          input.checked = completedActivities.has(activity.label);
+          await markActivity(activity, wanted);
+          if (currentActivity && currentActivity.label === activity.label) syncModalToggle();
         });
         label.append(input, slider);
-        cell.appendChild(label);
+        const meta = document.createElement('small');
+        meta.className = 'act-meta';
+        cell.append(label, meta);
         tableRow.appendChild(cell);
       });
     };
     decorateActivityTable();
     renderProgressSummary();
-    loadCentralHistory();
-    document.getElementById('save-progress-local').addEventListener('click', () => {
-      saveCompletedActivities();
+    loadCentralState();
+    document.addEventListener('control:login', loadCentralState);
+    document.getElementById('refresh-central-state').addEventListener('click', loadCentralState);
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      window.controlSession.clear();
+      window.location.reload();
     });
     const roadmapTab = document.getElementById('tab-roadmap');
     const dashboardTab = document.getElementById('tab-dashboard');
@@ -1231,42 +1550,12 @@ flowchart TD
       window.print();
     });
     window.addEventListener('afterprint', () => document.body.classList.remove('printing-progress'));
-    const activityAliases = [
-      ['Início do programa', 'M1 — Fundação e Segurança'],
-      ['Assinatura confirmada?', '0 Cadastro e assinatura'],
-      ['Bloqueia novos estudos', '0 Cadastro e assinatura'],
-      ['Nexus grava resultado sem aprovação formal', '4 Simulação DDP preliminar'],
-      ['Cliente segue para viabilidade oficial?', '4 Simulação DDP preliminar'],
-      ['Processo encerrado sem compra', '4 Simulação DDP preliminar'],
-      ['Ajuste de produto, fornecedor ou custos', '5 Coleta paralela de custos'],
-      ['Cliente aprova o relatório?', 'Decisão e aprovação do cliente'],
-      ['QC aprovada?', '8 Inspeção QC e decisão de qualidade'],
-      ['Novo fornecedor ou ajuste de produção', '8 Inspeção QC e decisão de qualidade'],
-      ['Webhook confirmado e split válido?', 'Webhook e split da 1ª parcela'],
-      ['Produção bloqueada', 'Webhook e split da 1ª parcela'],
-      ['Pagamento confirmado?', 'Webhook e split da 2ª parcela'],
-      ['Embarque bloqueado', 'Webhook e split da 2ª parcela'],
-      ['12 Produção concluída e embarque', '12 Embarque e BL/AWB'],
-      ['2ª parcela via Wise: saldo da mercadoria', '12 2ª parcela via Wise'],
-      ['Parcela final via Wise: impostos e despesas', '13 Chegada no Brasil'],
-      ['Canal aduaneiro?', 'Canal, exigência e liberação aduaneira'],
-      ['Exigência, documentos ou vistoria', 'Canal, exigência e liberação aduaneira'],
-      ['Carga liberada', 'Canal, exigência e liberação aduaneira'],
-      ['Nacionalização, entrega e encerramento', 'Entrega e banco documental'],
-      ['Banco documental:', 'Entrega e banco documental'],
-      ['Processo concluído', 'Entrega e banco documental']
-    ];
-    const findActivity = (nodeText) => {
-      const normalizedNode = normalizeActivityText(nodeText);
-      const direct = activityRows.find((row) => normalizedNode.includes(normalizeActivityText(row.label)));
-      if (direct) return direct;
-      for (const [alias, label] of activityAliases) {
-        if (normalizedNode.includes(normalizeActivityText(alias))) {
-          const row = activityRows.find((item) => item.label === label);
-          if (row) return row;
-        }
-      }
-      return null;
+    // Cada quadro do fluxograma carrega o ID da atividade no id do nó
+    // (ex.: a_M5_12_amostra → M5-12). Quadros sem prefixo são marcos ou
+    // pontos de controle e não abrem atividade.
+    const findActivity = (node) => {
+      const match = /(?:^|-)a_(M[1-7])_(\d{2})_/.exec(node.id || '');
+      return match ? activityRows.find((row) => row.label === `${match[1]}-${match[2]}`) || null : null;
     };
     const activityModal = document.getElementById('activity-modal');
     const modalTitle = document.getElementById('activity-modal-title');
@@ -1276,18 +1565,26 @@ flowchart TD
     const modalDescription = document.getElementById('activity-description');
     const completeToggle = document.getElementById('activity-complete-toggle');
     let currentActivity = null;
+    const syncModalToggle = () => {
+      const done = Boolean(currentActivity && completedActivities.has(currentActivity.label));
+      completeToggle.disabled = !currentActivity || !canMark();
+      completeToggle.classList.toggle('completed', done);
+      completeToggle.textContent = done ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
+      completeToggle.title = !currentActivity ? '' : !canMark() ? 'Marcação indisponível: acesso somente leitura ou fonte central fora do ar.' : '';
+      if (currentActivity) document.getElementById('activity-homologation').textContent = homologationText(currentActivity.label);
+      document.getElementById('activity-prs').textContent = currentActivity ? prLinksText(currentActivity.label) : '—';
+    };
     const openActivityModal = (node) => {
       const title = node.textContent.replace(/\s+/g, ' ').trim();
-      const activity = findActivity(title);
+      const activity = findActivity(node);
       currentActivity = activity;
-      modalTitle.textContent = activity ? activity.label : title;
+      modalTitle.textContent = activity ? activityDisplay(activity) : title;
       modalProjectPct.textContent = activity ? activity.projectPct : '—';
       modalMilestonePct.textContent = activity ? activity.milestonePct : '—';
       modalMilestone.textContent = activity ? activity.milestone : 'Quadro de controle do fluxo';
       modalDescription.textContent = activity ? activity.description : 'Ponto de controle visual do fluxo. A contribuição está incorporada à atividade operacional relacionada.';
-      completeToggle.disabled = !activity;
-      completeToggle.classList.toggle('completed', Boolean(activity && completedActivities.has(activity.label)));
-      completeToggle.textContent = activity && completedActivities.has(activity.label) ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
+      document.getElementById('activity-homologation').textContent = activity ? homologationText(activity.label) : '—';
+      syncModalToggle();
       if (typeof activityModal.showModal === 'function') activityModal.showModal();
       else activityModal.setAttribute('open', '');
     };
@@ -1299,6 +1596,7 @@ flowchart TD
       document.getElementById('timeline-modal-milestone').textContent = point.milestone || 'M1–M7';
       document.getElementById('timeline-modal-activity').textContent = point.activity || 'Registro histórico anterior à ativação do detalhamento';
       document.getElementById('timeline-modal-action').textContent = point.action || 'Estado acumulado registrado';
+      document.getElementById('timeline-modal-user').textContent = point.by || '—';
       document.getElementById('timeline-modal-description').textContent = point.description || 'O ponto representa o progresso acumulado do contrato nesta data.';
       if (timelineModal.parentElement !== document.body) document.body.appendChild(timelineModal);
       try {
@@ -1309,15 +1607,12 @@ flowchart TD
         timelineModal.setAttribute('open', '');
       }
     };
-    completeToggle.addEventListener('click', () => {
+    completeToggle.addEventListener('click', async () => {
       if (!currentActivity) return;
-      if (completedActivities.has(currentActivity.label)) completedActivities.delete(currentActivity.label);
-      else completedActivities.add(currentActivity.label);
-      const isCompleted = completedActivities.has(currentActivity.label);
-      saveCompletedActivities(currentActivity, isCompleted ? 'Atividade concluída' : 'Atividade reaberta');
-      renderProgressSummary();
-      completeToggle.classList.toggle('completed', isCompleted);
-      completeToggle.textContent = isCompleted ? '↶ Marcar como pendente' : '✓ Marcar como concluída';
+      const activity = currentActivity;
+      completeToggle.disabled = true;
+      await markActivity(activity, !completedActivities.has(activity.label));
+      if (currentActivity === activity) syncModalToggle();
     });
     document.getElementById('activity-modal-close').addEventListener('click', () => activityModal.close());
     activityModal.addEventListener('click', (event) => { if (event.target === activityModal) activityModal.close(); });
